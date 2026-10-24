@@ -85,6 +85,11 @@ manifest.router.entry = pages/home
 - 官方模拟器：VVD vela-watch-5.0，336×480；安装 rpk 后启动应用即可。
 - 手环 9 Pro：系统需支持 Vela JS 快应用；安装后从桌面启动。应用图标为 192×192 不透明 PNG（/common/app-icon.png），按系统桌面掩膜裁切显示。
 
+## Release
+
+- GitHub Release v1.0.0：https://github.com/yansheng1014/weiwan-ledger/releases/tag/v1.0.0
+- 仓库内可安装包：dist/com.bluebridge.ledger.debug.1.0.0.rpk
+
 ## 图标与来源
 
 - 线性图标：Lucide lucide-static@0.545.0，ISC License；生成脚本、尺寸、色套与清单见 src/common/icons/ICONS.md，许可证见 src/common/icons/LUCIDE-LICENSE.txt。
