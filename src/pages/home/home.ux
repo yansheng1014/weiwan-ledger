@@ -30,22 +30,10 @@
         <text class="nav-label" style="{{t.text}}">月结</text>
       </div>
 
-      <div class="slot-row glass-sm" style="{{t.glass}}" if="{{showSettings}}" onclick="openSettings">
-        <image class="slot-icon" src="{{icons.settings}}"></image>
-        <text class="slot-label" style="{{t.text}}">设置</text>
-      </div>
-
-      <div class="slot-row slot-undo glass-sm" style="{{t.glass}}" if="{{showUndo}}">
-        <text class="undo-text" style="{{t.secondary}}">{{undoText}}</text>
-        <div class="undo-hit" onclick="undoTap">
-          <image class="undo-icon" src="{{icons.undoMuted}}"></image>
-          <text class="undo-label" style="{{t.text}}">撤销</text>
-        </div>
-      </div>
-
-      <div class="slot-row glass-sm" style="{{t.glass}}" if="{{showUndone}}">
-        <image class="undo-icon" src="{{icons.undoMuted}}"></image>
-        <text class="undone-text" style="{{t.secondary}}">已撤销</text>
+      <div class="slot-row glass-sm" style="{{t.glass}}" onclick="slotTap">
+        <image class="slot-icon" src="{{slotIcon}}"></image>
+        <text class="slot-label" style="{{t.text}}">{{slotLabel}}</text>
+        <text class="slot-right" style="{{t.secondary}}">{{slotRight}}</text>
       </div>
 
     </div>
@@ -76,10 +64,10 @@ export default {
     subRight: "预算剩 —",
     subRightStyle: { color: COLORS.secondary, fontSize: "26px", lineHeight: "34px", fontWeight: "bold" },
     countLabel: "—",
-    showUndo: false,
-    showUndone: false,
-    showSettings: true,
-    undoText: "已记 ¥0",
+    slotMode: "settings",
+    slotIcon: ICONS.settings,
+    slotLabel: "设置",
+    slotRight: "",
     undoneUntil: 0,
     loadToken: 0,
     watchTimer: null,
@@ -209,16 +197,12 @@ export default {
     var now = Date.now()
 
     if (this.degraded) {
-      this.showUndo = false
-      this.showUndone = false
-      this.showSettings = true
+      this.setSlot("settings")
       return
     }
 
     if (this.undoneUntil && now < this.undoneUntil) {
-      this.showUndo = false
-      this.showUndone = true
-      this.showSettings = false
+      this.setSlot("undone")
       this.undoneTimer = setTimeout(function () {
         that.undoneUntil = 0
         that.undoneTimer = null
@@ -232,10 +216,7 @@ export default {
       var expireAt = undo.expireAt || ((undo.ts || 0) + 6000)
       if (undo.month === this.month && expireAt > now) {
         var amount = typeof undo.amount === "number" ? undo.amount : 0
-        this.undoText = "已记 " + formatAbs(amount)
-        this.showUndo = true
-        this.showUndone = false
-        this.showSettings = false
+        this.setSlot("undo", formatAbs(amount))
         this.undoTimer = setTimeout(function () {
           that.undoTimer = null
           that.refreshSlot()
@@ -244,24 +225,28 @@ export default {
       }
     }
 
-    this.showUndo = false
-    this.showUndone = false
-    this.showSettings = true
+    this.setSlot("settings")
+  },
+  setSlot(mode, amount) {
+    this.slotMode = mode
+    if (mode === "undo") {
+      this.slotIcon = ICONS.undoMuted
+      this.slotLabel = "已记 " + (amount || "")
+      this.slotRight = "撤销"
+    } else if (mode === "undone") {
+      this.slotIcon = ICONS.undoMuted
+      this.slotLabel = "已撤销"
+      this.slotRight = ""
+    } else {
+      this.slotIcon = ICONS.settings
+      this.slotLabel = "设置"
+      this.slotRight = ""
+    }
   },
   undoTap() {
-    var that = this
     var undo = this.readUndo()
     if (!undo) { this.refreshSlot(); return }
-    if (!undo.id) { this.runUndo(undo); return }
-    loadMonth(undo.month, function (records) {
-      var list = records || []
-      if (!list.length || list[0].i !== undo.id) {
-        that.clearUndoState()
-        that.refreshSlot()
-        return
-      }
-      that.runUndo(undo)
-    })
+    this.runUndo(undo)
   },
   runUndo(undo) {
     var that = this
@@ -278,6 +263,10 @@ export default {
       that.undoneUntil = Date.now() + 2000
       that.refresh()
     })
+  },
+  slotTap() {
+    if (this.slotMode === "undo") { this.undoTap(); return }
+    if (this.slotMode === "settings") { this.openSettings() }
   },
   retryLoad() {
     this.degraded = false
@@ -467,10 +456,19 @@ export default {
 }
 
 .slot-label {
-  flex-shrink: 0;
+  flex: 1;
   font-size: 32px;
   line-height: 40px;
   font-weight: bold;
+  lines: 1;
+}
+
+.slot-right {
+  flex-shrink: 0;
+  font-size: 26px;
+  line-height: 34px;
+  font-weight: bold;
+  text-align: right;
   lines: 1;
 }
 

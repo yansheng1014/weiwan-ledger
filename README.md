@@ -88,13 +88,21 @@ manifest.router.entry = pages/home
 
 ## Release
 
-- GitHub Release v1.0.1：https://github.com/yansheng1014/weiwan-ledger/releases/tag/v1.0.1
+- GitHub Release v1.0.2：https://github.com/yansheng1014/weiwan-ledger/releases/tag/v1.0.2
 - 仓库内可安装包：dist/com.bluebridge.ledger.debug.1.0.0.rpk
 
 ## 图标与来源
 
 - 线性图标：Lucide lucide-static@0.545.0，ISC License；生成脚本、尺寸、色套与清单见 src/common/icons/ICONS.md，许可证见 src/common/icons/LUCIDE-LICENSE.txt。
 - 应用图标：由项目提供的 192×192 双色「维万 / 记账」图稿转换，保持不透明满版，供手环桌面掩膜使用。
+
+## 性能与存储
+
+- JSC 字节码编译，减少启动解析。
+- 配置/月记录进程内读缓存（异步语义），页面往返不重复读 storage；写入成功同步更新，清空数据后强制失效。
+- 金额整数分、按月分片、A/B 双槽 + FNV-1a 校验 + 写后回读；读/写队列带看门狗。
+- 分类/快捷图标为 2× PNG，已按实际引用裁剪并使用调色板压缩；应用图标 192×192 调色板 PNG。
+- 最终 rpk 约 133 KB，debug 包可直接安装。
 
 ## 数据与隐私
 

@@ -243,7 +243,7 @@ export default {
   justify-content: center;
   align-items: center;
   border-radius: 14px;
-  background-color: rgba(255,255,255,0.09);
+  background-color: #161618;
 }
 
 .key-gap {
@@ -264,7 +264,7 @@ export default {
   justify-content: center;
   align-items: center;
   border-radius: 14px;
-  background-color: rgba(255,255,255,0.09);
+  background-color: #161618;
 }
 
 .k-del-icon {

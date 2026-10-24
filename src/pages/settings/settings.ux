@@ -138,7 +138,7 @@ export default {
 
 .set-body {
   width: 256px;
-  height: 80px;
+  height: 96px;
   margin-left: 16px;
   flex-direction: row;
   align-items: center;
@@ -146,30 +146,30 @@ export default {
 
 .set-name {
   flex: 1;
-  font-size: 32px;
-  line-height: 40px;
+  font-size: 34px;
+  line-height: 44px;
   font-weight: bold;
   lines: 1;
 }
 
 .set-meta {
-  font-size: 26px;
-  line-height: 32px;
+  font-size: 28px;
+  line-height: 36px;
   font-weight: bold;
   lines: 1;
 }
 
 .set-meta-plain {
-  font-size: 26px;
-  line-height: 32px;
+  font-size: 28px;
+  line-height: 36px;
   font-weight: bold;
   lines: 1;
 }
 
 .set-confirm {
-  width: 164px;
+  width: 132px;
   flex-shrink: 0;
-  font-size: 28px;
+  font-size: 26px;
   line-height: 36px;
   font-weight: bold;
   lines: 1;
