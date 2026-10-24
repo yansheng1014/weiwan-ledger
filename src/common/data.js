@@ -36,26 +36,6 @@ export function catsOfType(type) {
 export function monthPrefix(month) { return "bluebridge.ledger.m." + month }
 export var CFG_PREFIX = "bluebridge.ledger.cfg"
 
-// 进程内读缓存：频繁的页面往返不再反复读 storage；写入成功后同步更新。
-var cfgCache = null
-var monthCache = {}
-var monthOrder = []
-
-function rememberMonth(month, records) {
-  if (!monthCache[month]) monthOrder.push(month)
-  monthCache[month] = records
-  while (monthOrder.length > 24) {
-    var old = monthOrder.shift()
-    delete monthCache[old]
-  }
-}
-
-function forgetAll() {
-  cfgCache = null
-  monthCache = {}
-  monthOrder = []
-}
-
 function normalizeCfg(raw) {
   var c = raw && typeof raw === "object" ? raw : {}
   return {
@@ -67,44 +47,23 @@ function normalizeCfg(raw) {
 }
 
 export function loadCfg(cb) {
-  if (cfgCache) {
-    var cachedCfg = cfgCache
-    setTimeout(function () { cb(cachedCfg, null) }, 0)
-    return
-  }
   read(CFG_PREFIX, function (err, d) {
-    var cfg = normalizeCfg(d)
-    if (!err) cfgCache = cfg
-    cb(cfg, err || null)
+    cb(normalizeCfg(d), err || null)
   })
 }
 
 export function saveCfg(cfg, cb) {
-  var norm = normalizeCfg(cfg)
-  write(CFG_PREFIX, norm, function (err) {
-    if (!err) cfgCache = norm
-    if (cb) cb(err)
-  })
+  write(CFG_PREFIX, normalizeCfg(cfg), cb || function () {})
 }
 
 export function loadMonth(month, cb) {
-  if (monthCache[month]) {
-    var cachedRecords = monthCache[month]
-    setTimeout(function () { cb(cachedRecords, null) }, 0)
-    return
-  }
   read(monthPrefix(month), function (err, d) {
-    var records = Array.isArray(d) ? d : []
-    if (!err) rememberMonth(month, records)
-    cb(records, err || null)
+    cb(Array.isArray(d) ? d : [], err || null)
   })
 }
 
 export function saveMonth(month, records, cb) {
-  write(monthPrefix(month), records, function (err) {
-    if (!err) rememberMonth(month, records)
-    if (cb) cb(err)
-  })
+  write(monthPrefix(month), records, cb || function () {})
 }
 
 function ensureMonthIndex(month, cb) {
@@ -253,11 +212,7 @@ export function setBudget(month, cents, cb) {
 }
 
 export function clearAllData(cb) {
-  forgetAll()
-  clearAll(function (err) {
-    if (!err) forgetAll()
-    cb(err)
-  })
+  clearAll(function (err) { cb(err) })
 }
 
 export function newRecord(type, categoryId, cents) {
