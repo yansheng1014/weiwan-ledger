@@ -88,7 +88,7 @@ manifest.router.entry = pages/home
 
 ## Release
 
-- GitHub Release v1.0.3：https://github.com/yansheng1014/weiwan-ledger/releases/tag/v1.0.3
+- GitHub Release v1.0.4：https://github.com/yansheng1014/weiwan-ledger/releases/tag/v1.0.4
 - 仓库内可安装包：dist/com.bluebridge.ledger.debug.1.0.0.rpk
 
 ## 图标与来源

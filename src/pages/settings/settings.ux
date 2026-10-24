@@ -137,7 +137,7 @@ export default {
 }
 
 .set-body {
-  width: 256px;
+  width: 268px;
   height: 96px;
   margin-left: 16px;
   flex-direction: row;
