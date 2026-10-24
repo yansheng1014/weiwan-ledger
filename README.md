@@ -63,11 +63,12 @@ manifest.router.entry = pages/home
 
 要求：Node.js ≥ 20；构建依赖 aiot-toolkit、sharp、lucide-static。
 
-    npm install
+    npm install --include=dev
     npm run build
     # 输出：dist/com.bluebridge.ledger.debug.1.0.0.rpk
 
 说明：
+- 如果当前环境 NODE_ENV=production 或 npm 配置了 omit=dev，请使用 npm install --include=dev（构建依赖属于 devDependencies）。
 - 构建脚本会复制 src 到 /tmp 下的 ASCII 临时目录再构建，避免 aiot-toolkit 在中文路径下生成临时目录失败。
 - 重新生成图标：npm run icons（真实 Lucide SVG → 2× PNG，见 src/common/icons/ICONS.md）。
 - 已开启 JSC 字节码编译（quickapp.config.js），加快启动；需要安装 @aiot-toolkit/jsc。
