@@ -1,21 +1,21 @@
 <template>
   <div class="page" style="{{t.page}}">
     <div class="topbar" style="{{t.page}}">
-      <div class="hit" onclick="back">
+      <div class="hit round-hit" style="{{t.glass}}" onclick="back">
         <image class="hit-icon" src="{{icons.back}}"></image>
       </div>
-      <div class="hit detail-hit" onclick="openDetail">
+      <div class="hit detail-hit round-hit" style="{{t.glass}}" onclick="openDetail">
         <image class="hit-icon" src="{{icons.list}}"></image>
       </div>
-      <div class="hit" onclick="openBookmark">
+      <div class="hit round-hit" style="{{t.glass}}" onclick="openBookmark">
         <image class="hit-icon" src="{{bookmarkIcon}}"></image>
       </div>
-      <div class="type-chip" style="{{chipStyle}}" onclick="toggleType">
+      <div class="type-chip glass-sm" style="{{t.glass}}" onclick="toggleType">
         <text class="type-label" style="{{t.text}}">{{typeLabel}}</text>
       </div>
     </div>
 
-    <div class="amount-row">
+    <div class="amount-row glass-sm" style="{{t.glass}}">
       <text class="amt-note" if="{{full}}" style="{{t.secondary}}">本月已满 500 笔</text>
       <text class="amount-yen" style="{{t.muted}}">¥</text>
       <text class="amount-num" style="{{amountStyle}}">{{amountNum}}</text>
@@ -33,28 +33,28 @@
     <div class="keyboard">
       <div class="key-grid">
         <div class="key-row">
-          <div class="key" style="{{t.surface}}" onclick="press('1')"><text class="key-label" style="{{t.text}}">1</text></div>
-          <div class="key key-gap" style="{{t.surface}}" onclick="press('2')"><text class="key-label" style="{{t.text}}">2</text></div>
-          <div class="key key-gap" style="{{t.surface}}" onclick="press('3')"><text class="key-label" style="{{t.text}}">3</text></div>
+          <div class="key" style="{{t.glass}}" onclick="press('1')"><text class="key-label" style="{{t.text}}">1</text></div>
+          <div class="key key-gap" style="{{t.glass}}" onclick="press('2')"><text class="key-label" style="{{t.text}}">2</text></div>
+          <div class="key key-gap" style="{{t.glass}}" onclick="press('3')"><text class="key-label" style="{{t.text}}">3</text></div>
         </div>
         <div class="key-row key-row-gap">
-          <div class="key" style="{{t.surface}}" onclick="press('4')"><text class="key-label" style="{{t.text}}">4</text></div>
-          <div class="key key-gap" style="{{t.surface}}" onclick="press('5')"><text class="key-label" style="{{t.text}}">5</text></div>
-          <div class="key key-gap" style="{{t.surface}}" onclick="press('6')"><text class="key-label" style="{{t.text}}">6</text></div>
+          <div class="key" style="{{t.glass}}" onclick="press('4')"><text class="key-label" style="{{t.text}}">4</text></div>
+          <div class="key key-gap" style="{{t.glass}}" onclick="press('5')"><text class="key-label" style="{{t.text}}">5</text></div>
+          <div class="key key-gap" style="{{t.glass}}" onclick="press('6')"><text class="key-label" style="{{t.text}}">6</text></div>
         </div>
         <div class="key-row key-row-gap">
-          <div class="key" style="{{t.surface}}" onclick="press('7')"><text class="key-label" style="{{t.text}}">7</text></div>
-          <div class="key key-gap" style="{{t.surface}}" onclick="press('8')"><text class="key-label" style="{{t.text}}">8</text></div>
-          <div class="key key-gap" style="{{t.surface}}" onclick="press('9')"><text class="key-label" style="{{t.text}}">9</text></div>
+          <div class="key" style="{{t.glass}}" onclick="press('7')"><text class="key-label" style="{{t.text}}">7</text></div>
+          <div class="key key-gap" style="{{t.glass}}" onclick="press('8')"><text class="key-label" style="{{t.text}}">8</text></div>
+          <div class="key key-gap" style="{{t.glass}}" onclick="press('9')"><text class="key-label" style="{{t.text}}">9</text></div>
         </div>
         <div class="key-row key-row-gap">
-          <div class="key" style="{{t.surface}}" onclick="press('00')"><text class="key-label" style="{{t.text}}">00</text></div>
-          <div class="key key-gap" style="{{t.surface}}" onclick="press('0')"><text class="key-label" style="{{t.text}}">0</text></div>
-          <div class="key key-gap" style="{{t.surface}}" onclick="press('.')"><text class="key-label" style="{{t.text}}">.</text></div>
+          <div class="key" style="{{t.glass}}" onclick="press('00')"><text class="key-label" style="{{t.text}}">00</text></div>
+          <div class="key key-gap" style="{{t.glass}}" onclick="press('0')"><text class="key-label" style="{{t.text}}">0</text></div>
+          <div class="key key-gap" style="{{t.glass}}" onclick="press('.')"><text class="key-label" style="{{t.text}}">.</text></div>
         </div>
       </div>
       <div class="key-right">
-        <div class="bksp" style="{{t.surface}}" onclick="press('backspace')">
+        <div class="bksp" style="{{t.glass}}" onclick="press('backspace')">
           <image class="bksp-icon" src="{{icons.backspace}}"></image>
         </div>
         <div class="save" style="{{saveStyle}}" onclick="save">
@@ -83,7 +83,7 @@ function amountStyleFor(cents) {
 }
 
 function saveStyleFor(enabled) {
-  return { backgroundColor: enabled ? COLORS.surface : COLORS.press }
+  return { backgroundColor: enabled ? COLORS.accent : COLORS.press }
 }
 
 function saveLabelStyleFor(confirming, enabled) {
@@ -91,7 +91,7 @@ function saveLabelStyleFor(confirming, enabled) {
     return { color: COLORS.accent, fontSize: "24px", lineHeight: "32px", fontWeight: "bold" }
   }
   return {
-    color: enabled ? COLORS.accent : COLORS.accentDisabled,
+    color: enabled ? COLORS.text : COLORS.accentDisabled,
     fontSize: "32px",
     lineHeight: "40px",
     fontWeight: "bold"
@@ -210,8 +210,8 @@ export default {
         name: cat.name,
         icon: selected && iconSet ? iconSet.w : (iconSet ? iconSet.s : ICONS.catOtherS),
         cardStyle: {
-          backgroundColor: selected ? COLORS.surface : "transparent",
-          borderColor: selected ? COLORS.secondary : COLORS.lineSoft,
+          backgroundColor: selected ? COLORS.glassStrong : COLORS.glass,
+          borderColor: selected ? COLORS.accent : COLORS.glassLine,
           marginRight: i === list.length - 1 ? "0px" : "12px"
         },
         labelStyle: {
@@ -408,9 +408,12 @@ export default {
 .amount-row {
   position: relative;
   width: 288px;
-  height: 56px;
+  height: 60px;
   flex-shrink: 0;
   margin-left: 24px;
+  margin-top: 8px;
+  padding-right: 14px;
+  border-radius: 16px;
   flex-direction: row;
   align-items: flex-end;
   justify-content: flex-end;
@@ -462,7 +465,7 @@ export default {
   padding-top: 2px;
   border-width: 1px;
   border-style: solid;
-  border-radius: 12px;
+  border-radius: 14px;
 }
 
 .cat-icon {

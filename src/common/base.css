@@ -33,6 +33,21 @@
   height: 32px;
   object-fit: contain;
 }
+.glass {
+  border-radius: 20px;
+}
+.glass-sm {
+  border-radius: 16px;
+}
+.glass-mid {
+  border-radius: 18px;
+}
+.round-hit {
+  border-radius: 28px;
+  border-width: 1px;
+  border-style: solid;
+  margin-right: 8px;
+}
 .top-title {
   flex: 1;
   margin-left: 8px;

@@ -1,7 +1,7 @@
 <template>
   <div class="page" style="{{t.page}}">
     <div class="topbar" style="{{t.page}}">
-      <div class="hit" onclick="back">
+      <div class="hit round-hit" style="{{t.glass}}" onclick="back">
         <image class="hit-icon" src="{{icons.back}}"></image>
       </div>
       <text class="top-title" style="{{t.text}}">分类</text>
@@ -12,8 +12,7 @@
       <text class="cat-sec" style="{{t.muted}}">支出</text>
 
       <div class="cat-item" for="{{expRows}}" tid="id">
-        <div class="hairline"></div>
-        <div class="cat-body">
+        <div class="cat-body glass-sm" style="{{t.glass}}">
           <text class="cat-name" style="{{$item.nameStyle}}">{{$item.name}}</text>
           <div class="cat-hit" onclick="moveUp($item.id)">
             <image class="cat-arrow" src="{{$item.upIcon}}"></image>
@@ -27,8 +26,7 @@
       <text class="cat-sec" style="{{t.muted}}">收入</text>
 
       <div class="cat-item" for="{{incRows}}" tid="id">
-        <div class="hairline"></div>
-        <div class="cat-body">
+        <div class="cat-body glass-sm" style="{{t.glass}}">
           <text class="cat-name" style="{{$item.nameStyle}}">{{$item.name}}</text>
           <div class="cat-hit" onclick="moveUp($item.id)">
             <image class="cat-arrow" src="{{$item.upIcon}}"></image>
@@ -173,6 +171,7 @@ export default {
 .cat-sec {
   width: 288px;
   margin-left: 24px;
+  margin-top: 12px;
   height: 32px;
   flex-shrink: 0;
   font-size: 26px;
@@ -190,13 +189,17 @@ export default {
 
 .cat-body {
   width: 288px;
-  height: 87px;
+  height: 76px;
+  margin-top: 8px;
+  padding-left: 12px;
+  padding-right: 12px;
   flex-direction: row;
   align-items: center;
+  border-radius: 16px;
 }
 
 .cat-name {
-  width: 164px;
+  width: 132px;
   flex-shrink: 0;
   font-size: 32px;
   line-height: 40px;

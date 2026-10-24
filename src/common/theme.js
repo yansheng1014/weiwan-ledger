@@ -1,8 +1,11 @@
 // 维万记账 · 视觉令牌（Vela 无 CSS 变量，颜色/字号通过 style 对象注入）
 export const COLORS = {
   bg: "#000000",
-  surface: "#111111",
-  press: "#1A1A1A",
+  surface: "#161618",
+  press: "#222226",
+  glass: "rgba(255,255,255,0.09)",
+  glassStrong: "rgba(255,255,255,0.14)",
+  glassLine: "rgba(255,255,255,0.12)",
   line: "#3A3A3A",
   lineSoft: "#2A2A2A",
   text: "#FFFFFF",
@@ -24,6 +27,18 @@ export const T = {
   accentBg: { backgroundColor: COLORS.accent },
   surface: { backgroundColor: COLORS.surface },
   press: { backgroundColor: COLORS.press },
+  glass: {
+    backgroundColor: COLORS.glass,
+    borderColor: COLORS.glassLine,
+    borderWidth: "1px",
+    borderStyle: "solid"
+  },
+  glassStrong: {
+    backgroundColor: COLORS.glassStrong,
+    borderColor: COLORS.glassLine,
+    borderWidth: "1px",
+    borderStyle: "solid"
+  },
   line: { backgroundColor: COLORS.line },
   lineSoft: { backgroundColor: COLORS.lineSoft }
 }

@@ -1,39 +1,41 @@
 <template>
   <div class="page home-page" style="{{t.page}}">
     <div class="home-content">
-      <text class="hero-label" style="{{t.secondary}}">本月支出</text>
+      <div class="summary-card glass" style="{{t.glass}}">
+        <text class="hero-label" style="{{t.secondary}}">本月支出</text>
 
-      <div class="hero">
-        <text class="hero-yen" style="{{t.muted}}">¥</text>
-        <text class="hero-num" style="{{heroNumStyle}}">{{heroNum}}</text>
+        <div class="hero">
+          <text class="hero-yen" style="{{t.muted}}">¥</text>
+          <text class="hero-num" style="{{heroNumStyle}}">{{heroNum}}</text>
+        </div>
+
+        <div class="sub-row" onclick="subTap">
+          <text class="sub-text" style="{{subRightStyle}}">{{subRight}}</text>
+        </div>
       </div>
 
-      <div class="sub-row" onclick="subTap">
-        <text class="sub-text" style="{{subRightStyle}}">{{subRight}}</text>
-      </div>
-
-      <div class="cta" style="{{ctaStyle}}" onclick="goRecord">
+      <div class="cta glass-mid" style="{{t.glassStrong}}" onclick="goRecord">
         <image class="cta-icon" src="{{icons.plusAccent}}"></image>
         <text class="cta-label" style="{{t.text}}">记一笔</text>
       </div>
 
-      <div class="nav-row nav-row-first" onclick="goDetail">
+      <div class="nav-row nav-row-first glass-sm" style="{{t.glass}}" onclick="goDetail">
         <image class="nav-icon" src="{{icons.list}}"></image>
         <text class="nav-label" style="{{t.text}}">明细</text>
         <text class="nav-meta" style="{{t.secondary}}">{{countLabel}}</text>
       </div>
 
-      <div class="nav-row" onclick="goReport">
+      <div class="nav-row glass-sm" style="{{t.glass}}" onclick="goReport">
         <image class="nav-icon" src="{{icons.report}}"></image>
         <text class="nav-label" style="{{t.text}}">月结</text>
       </div>
 
-      <div class="slot-row" if="{{showSettings}}" onclick="openSettings">
+      <div class="slot-row glass-sm" style="{{t.glass}}" if="{{showSettings}}" onclick="openSettings">
         <image class="slot-icon" src="{{icons.settings}}"></image>
         <text class="slot-label" style="{{t.text}}">设置</text>
       </div>
 
-      <div class="slot-row slot-undo" if="{{showUndo}}">
+      <div class="slot-row slot-undo glass-sm" style="{{t.glass}}" if="{{showUndo}}">
         <text class="undo-text" style="{{t.secondary}}">{{undoText}}</text>
         <div class="undo-hit" onclick="undoTap">
           <image class="undo-icon" src="{{icons.undoMuted}}"></image>
@@ -41,16 +43,13 @@
         </div>
       </div>
 
-      <div class="slot-row" if="{{showUndone}}">
+      <div class="slot-row glass-sm" style="{{t.glass}}" if="{{showUndone}}">
         <image class="undo-icon" src="{{icons.undoMuted}}"></image>
         <text class="undone-text" style="{{t.secondary}}">已撤销</text>
       </div>
 
     </div>
 
-    <div class="hair hair-1" style="{{t.line}}"></div>
-    <div class="hair hair-2" style="{{t.line}}"></div>
-    <div class="hair hair-3" style="{{t.line}}"></div>
   </div>
 </template>
 
@@ -61,7 +60,7 @@ import { loadCfg, loadMonth, summarize, budgetOf, undoLast } from "../../common/
 import { formatAbs } from "../../common/money.js"
 import { currentMonth } from "../../common/date.js"
 
-var HERO_STYLE = { color: COLORS.text, fontSize: "96px", lineHeight: "104px", fontWeight: "bold", flexShrink: 0 }
+var HERO_STYLE = { color: COLORS.text, fontSize: "76px", lineHeight: "84px", fontWeight: "bold", flexShrink: 0 }
 
 export default {
   private: {
@@ -190,10 +189,10 @@ export default {
   setHero(cents) {
     var full = formatAbs(cents)
     var len = full.length
-    var size = "88px"
-    var height = "96px"
-    if (len === 7) { size = "72px"; height = "80px" }
-    else if (len > 7) { size = "48px"; height = "56px" }
+    var size = "76px"
+    var height = "84px"
+    if (len === 7) { size = "62px"; height = "70px" }
+    else if (len > 7) { size = "44px"; height = "52px" }
     this.heroNum = full.slice(1)
     this.heroNumStyle = {
       color: COLORS.text,
@@ -314,24 +313,35 @@ export default {
   flex-shrink: 0;
   margin-left: 24px;
   margin-right: 24px;
-  padding-top: 24px;
+  padding-top: 20px;
+  flex-direction: column;
+}
+
+.summary-card {
+  width: 288px;
+  height: 156px;
+  flex-shrink: 0;
+  border-radius: 20px;
+  padding-left: 16px;
+  padding-right: 16px;
+  padding-top: 12px;
   flex-direction: column;
 }
 
 .hero-label {
-  width: 288px;
-  height: 28px;
+  width: 256px;
+  height: 24px;
   flex-shrink: 0;
   font-size: 26px;
-  line-height: 28px;
+  line-height: 24px;
   font-weight: bold;
   lines: 1;
   text-overflow: ellipsis;
 }
 
 .hero {
-  width: 288px;
-  height: 96px;
+  width: 256px;
+  height: 76px;
   flex-shrink: 0;
   flex-direction: row;
   align-items: flex-start;
@@ -339,10 +349,10 @@ export default {
 
 .hero-yen {
   flex-shrink: 0;
-  margin-top: 6px;
+  margin-top: 2px;
   margin-right: 4px;
-  font-size: 36px;
-  line-height: 44px;
+  font-size: 32px;
+  line-height: 38px;
   font-weight: bold;
 }
 
@@ -352,18 +362,17 @@ export default {
 }
 
 .sub-row {
-  width: 288px;
-  height: 32px;
+  width: 256px;
+  height: 28px;
   flex-shrink: 0;
-  margin-top: 2px;
   flex-direction: row;
   align-items: center;
 }
 
 .sub-text {
   flex-shrink: 1;
-  font-size: 26px;
-  line-height: 32px;
+  font-size: 24px;
+  line-height: 28px;
   font-weight: bold;
   lines: 1;
   text-overflow: ellipsis;
@@ -371,15 +380,13 @@ export default {
 
 .cta {
   width: 288px;
-  height: 88px;
+  height: 76px;
   flex-shrink: 0;
-  margin-top: 6px;
-  padding-left: 23px;
+  margin-top: 10px;
+  padding-left: 16px;
   flex-direction: row;
   align-items: center;
-  border-width: 1px;
-  border-style: solid;
-  border-radius: 16px;
+  border-radius: 18px;
 }
 
 .cta-icon {
@@ -392,27 +399,31 @@ export default {
 
 .cta-label {
   flex-shrink: 0;
-  font-size: 36px;
-  line-height: 44px;
+  font-size: 34px;
+  line-height: 42px;
   font-weight: bold;
   lines: 1;
 }
 
 .nav-row {
   width: 288px;
-  height: 64px;
+  height: 56px;
   flex-shrink: 0;
+  margin-top: 8px;
+  padding-left: 14px;
+  padding-right: 14px;
   flex-direction: row;
   align-items: center;
+  border-radius: 16px;
 }
 
 .nav-row-first {
-  margin-top: 2px;
+  margin-top: 10px;
 }
 
 .nav-icon {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   flex-shrink: 0;
   margin-right: 12px;
   object-fit: contain;
@@ -437,10 +448,14 @@ export default {
 
 .slot-row {
   width: 288px;
-  height: 64px;
+  height: 56px;
   flex-shrink: 0;
+  margin-top: 8px;
+  padding-left: 14px;
+  padding-right: 14px;
   flex-direction: row;
   align-items: center;
+  border-radius: 16px;
 }
 
 .slot-icon {
@@ -473,7 +488,7 @@ export default {
 
 .undo-hit {
   width: 96px;
-  height: 64px;
+  height: 56px;
   flex-shrink: 0;
   flex-direction: row;
   align-items: center;
@@ -533,23 +548,4 @@ export default {
   lines: 1;
 }
 
-.hair {
-  position: absolute;
-  left: 24px;
-  width: 288px;
-  height: 1px;
-  flex-shrink: 0;
-}
-
-.hair-1 {
-  top: 278px;
-}
-
-.hair-2 {
-  top: 342px;
-}
-
-.hair-3 {
-  top: 406px;
-}
 </style>
