@@ -1,0 +1,572 @@
+<template>
+  <div class="page" style="{{t.page}}">
+    <div class="topbar" style="{{t.page}}">
+      <div class="hit" onclick="back">
+        <image class="hit-icon" src="{{icons.back}}"></image>
+      </div>
+      <div class="hit detail-hit" onclick="openDetail">
+        <image class="hit-icon" src="{{icons.list}}"></image>
+      </div>
+      <div class="hit" onclick="openBookmark">
+        <image class="hit-icon" src="{{bookmarkIcon}}"></image>
+      </div>
+      <div class="type-chip" style="{{chipStyle}}" onclick="toggleType">
+        <text class="type-label" style="{{t.text}}">{{typeLabel}}</text>
+      </div>
+    </div>
+
+    <div class="amount-row">
+      <text class="amt-note" if="{{full}}" style="{{t.secondary}}">本月已满 500 笔</text>
+      <text class="amount-yen" style="{{t.muted}}">¥</text>
+      <text class="amount-num" style="{{amountStyle}}">{{amountNum}}</text>
+    </div>
+
+    <scroll class="cat-scroll" scroll-x="true" scroll-y="false">
+      <div class="cat-track" style="{{catTrackStyle}}">
+        <div class="cat-card" for="{{cats}}" tid="id" style="{{$item.cardStyle}}" onclick="pickCat($item.id)">
+          <image class="cat-icon" src="{{$item.icon}}"></image>
+          <text class="cat-label" style="{{$item.labelStyle}}">{{$item.name}}</text>
+        </div>
+      </div>
+    </scroll>
+
+    <div class="keyboard">
+      <div class="key-grid">
+        <div class="key-row">
+          <div class="key" style="{{t.surface}}" onclick="press('1')"><text class="key-label" style="{{t.text}}">1</text></div>
+          <div class="key key-gap" style="{{t.surface}}" onclick="press('2')"><text class="key-label" style="{{t.text}}">2</text></div>
+          <div class="key key-gap" style="{{t.surface}}" onclick="press('3')"><text class="key-label" style="{{t.text}}">3</text></div>
+        </div>
+        <div class="key-row key-row-gap">
+          <div class="key" style="{{t.surface}}" onclick="press('4')"><text class="key-label" style="{{t.text}}">4</text></div>
+          <div class="key key-gap" style="{{t.surface}}" onclick="press('5')"><text class="key-label" style="{{t.text}}">5</text></div>
+          <div class="key key-gap" style="{{t.surface}}" onclick="press('6')"><text class="key-label" style="{{t.text}}">6</text></div>
+        </div>
+        <div class="key-row key-row-gap">
+          <div class="key" style="{{t.surface}}" onclick="press('7')"><text class="key-label" style="{{t.text}}">7</text></div>
+          <div class="key key-gap" style="{{t.surface}}" onclick="press('8')"><text class="key-label" style="{{t.text}}">8</text></div>
+          <div class="key key-gap" style="{{t.surface}}" onclick="press('9')"><text class="key-label" style="{{t.text}}">9</text></div>
+        </div>
+        <div class="key-row key-row-gap">
+          <div class="key" style="{{t.surface}}" onclick="press('00')"><text class="key-label" style="{{t.text}}">00</text></div>
+          <div class="key key-gap" style="{{t.surface}}" onclick="press('0')"><text class="key-label" style="{{t.text}}">0</text></div>
+          <div class="key key-gap" style="{{t.surface}}" onclick="press('.')"><text class="key-label" style="{{t.text}}">.</text></div>
+        </div>
+      </div>
+      <div class="key-right">
+        <div class="bksp" style="{{t.surface}}" onclick="press('backspace')">
+          <image class="bksp-icon" src="{{icons.backspace}}"></image>
+        </div>
+        <div class="save" style="{{saveStyle}}" onclick="save">
+          <text class="save-label" style="{{saveLabelStyle}}">{{saveLabel}}</text>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import prompt from "@system.prompt"
+import { T, ICONS, CAT_ICON, COLORS } from "../../common/theme.js"
+import { loadCfg, loadMonth, frequency, orderedCats, addRecord, undoLast, newRecord } from "../../common/data.js"
+import { formatAbs, parseInputToCents } from "../../common/money.js"
+import { currentMonth } from "../../common/date.js"
+
+function amountStyleFor(cents) {
+  var len = formatAbs(cents).length
+  var size = "48px"
+  var height = "56px"
+  if (len === 7) { size = "40px"; height = "48px" }
+  else if (len > 7) { size = "32px"; height = "40px" }
+  return { color: COLORS.text, fontSize: size, lineHeight: height, fontWeight: "bold", flexShrink: 0 }
+}
+
+function saveStyleFor(enabled) {
+  return { backgroundColor: enabled ? COLORS.surface : COLORS.press }
+}
+
+function saveLabelStyleFor(confirming, enabled) {
+  if (confirming) {
+    return { color: COLORS.accent, fontSize: "24px", lineHeight: "32px", fontWeight: "bold" }
+  }
+  return {
+    color: enabled ? COLORS.accent : COLORS.accentDisabled,
+    fontSize: "32px",
+    lineHeight: "40px",
+    fontWeight: "bold"
+  }
+}
+
+export default {
+  private: {
+    t: T,
+    icons: ICONS,
+    type: 1,
+    typeLabel: "支出",
+    input: "",
+    cents: 0,
+    amountNum: "0",
+    amountStyle: amountStyleFor(0),
+    cfg: null,
+    counts: {},
+    selId: "",
+    cats: [],
+    catTrackStyle: { width: "724px", height: "60px" },
+    month: "",
+    monthCount: 0,
+    full: false,
+    ready: false,
+    bookmarkIcon: ICONS.bookmark,
+    saving: false,
+    confirm: false,
+    confirmUntil: 0,
+    confirmTimer: null,
+    saveLabel: "存",
+    saveLabelStyle: saveLabelStyleFor(false, false),
+    saveStyle: saveStyleFor(false),
+    chipStyle: { borderColor: COLORS.line }
+  },
+  onInit() {
+    this.month = currentMonth()
+    this.syncBookmark()
+    this.buildListForType()
+    this.syncAmount()
+    this.initData()
+  },
+  readBookmarkDraft() {
+    var a = this.$app
+    if (a && a.$def && a.$def.data) return a.$def.data.bookmarkDraft || ""
+    return ""
+  },
+  syncBookmark() {
+    this.bookmarkIcon = this.readBookmarkDraft() ? ICONS.bookmarkActive : ICONS.bookmark
+  },
+  openBookmark() {
+    router.push({ uri: "/pages/bookmark" })
+  },
+  onShow() {
+    this.syncBookmark()
+    if (this.ready) this.reloadCount()
+  },
+  onHide() {
+    this.resetConfirm()
+  },
+  onDestroy() {
+    if (this.confirmTimer) { clearTimeout(this.confirmTimer); this.confirmTimer = null }
+  },
+  initData() {
+    var that = this
+    var month = currentMonth()
+    this.month = month
+    var pending = 2
+    function done() {
+      if (pending > 0) return
+      that.ready = true
+      that.selId = ""
+      that.buildListForType()
+    }
+    loadCfg(function (cfg) {
+      that.cfg = cfg
+      pending -= 1
+      done()
+    })
+    frequency(month, function (counts) {
+      that.counts = counts || {}
+      pending -= 1
+      done()
+    })
+    loadMonth(month, function (records) {
+      that.monthCount = records ? records.length : 0
+      that.full = that.monthCount >= 500
+      that.syncSave()
+    })
+  },
+  reloadCount() {
+    var that = this
+    loadMonth(currentMonth(), function (records) {
+      that.monthCount = records ? records.length : 0
+      that.full = that.monthCount >= 500
+      that.syncSave()
+    })
+  },
+  buildListForType() {
+    var list = orderedCats(this.type, this.cfg, this.counts)
+    var found = false
+    for (var i = 0; i < list.length; i += 1) {
+      if (list[i].id === this.selId) found = true
+    }
+    if (!found) this.selId = list.length ? list[0].id : ""
+    this.rebuildCats(list)
+  },
+  rebuildCats(list) {
+    var rows = []
+    for (var i = 0; i < list.length; i += 1) {
+      var cat = list[i]
+      var selected = cat.id === this.selId
+      var iconSet = CAT_ICON[cat.id]
+      rows.push({
+        id: cat.id,
+        name: cat.name,
+        icon: selected && iconSet ? iconSet.w : (iconSet ? iconSet.s : ICONS.catOtherS),
+        cardStyle: {
+          backgroundColor: selected ? COLORS.surface : "transparent",
+          borderColor: selected ? COLORS.secondary : COLORS.lineSoft,
+          marginRight: i === list.length - 1 ? "0px" : "12px"
+        },
+        labelStyle: {
+          color: selected ? COLORS.text : COLORS.secondary,
+          fontWeight: selected ? "bold" : "normal"
+        }
+      })
+    }
+    var count = list.length
+    var width = count > 0 ? count * 80 + (count - 1) * 12 : 0
+    this.cats = rows
+    this.catTrackStyle = { width: width + "px", height: "60px" }
+  },
+  pickCat(id) {
+    if (this.saving) return
+    if (id === this.selId) return
+    this.resetConfirm()
+    this.selId = id
+    this.buildListForType()
+  },
+  toggleType() {
+    if (this.saving) return
+    this.resetConfirm()
+    this.type = this.type === 1 ? 2 : 1
+    this.typeLabel = this.type === 1 ? "支出" : "收入"
+    this.selId = ""
+    this.buildListForType()
+  },
+  press(key) {
+    if (this.saving) return
+    this.resetConfirm()
+    var value = this.input || ""
+
+    if (key === "backspace") {
+      value = value.length > 0 ? value.slice(0, value.length - 1) : ""
+    } else if (key === "00") {
+      if (value.indexOf(".") < 0) {
+        if (value === "") value = "00"
+        else if (value.length + 2 <= 5) value = value + "00"
+      }
+    } else if (key === ".") {
+      if (value.indexOf(".") < 0) {
+        if (value === "") value = "0."
+        else value = value + "."
+      }
+    } else {
+      if (value.indexOf(".") >= 0) {
+        var frac = value.split(".")[1] || ""
+        if (frac.length < 2) value = value + key
+      } else if (value === "") {
+        value = key
+      } else if (/^0+$/.test(value)) {
+        value = key
+      } else if (value.length < 5) {
+        value = value + key
+      }
+    }
+
+    this.input = value
+    this.syncAmount()
+  },
+  syncAmount() {
+    var cents = parseInputToCents(this.input)
+    this.cents = cents
+    var full = formatAbs(cents)
+    this.amountNum = full.slice(1)
+    this.amountStyle = amountStyleFor(cents)
+    this.syncSave()
+  },
+  syncSave() {
+    var enabled = !this.saving && !this.full && this.cents > 0
+    var confirming = this.confirm && this.type === 1 && this.cents >= 50000
+    this.saveLabel = confirming ? "确认" : "存"
+    this.saveStyle = saveStyleFor(enabled)
+    this.saveLabelStyle = saveLabelStyleFor(confirming, enabled)
+  },
+  resetConfirm() {
+    if (this.confirmTimer) { clearTimeout(this.confirmTimer); this.confirmTimer = null }
+    if (!this.confirm) return
+    this.confirm = false
+    this.confirmUntil = 0
+    this.syncSave()
+  },
+  armConfirm() {
+    var that = this
+    this.confirm = true
+    this.confirmUntil = Date.now() + 5000
+    this.syncSave()
+    prompt.showToast({ message: "再点一次确认", duration: 1500 })
+    if (this.confirmTimer) clearTimeout(this.confirmTimer)
+    this.confirmTimer = setTimeout(function () {
+      if (!that.confirm) return
+      that.confirm = false
+      that.confirmUntil = 0
+      that.confirmTimer = null
+      that.syncSave()
+    }, 5000)
+  },
+  save() {
+    if (this.saving) return
+    var cents = parseInputToCents(this.input)
+    if (cents <= 0) return
+    if (this.full) return
+    if (!this.selId) return
+
+    var now = Date.now()
+    if (this.confirm && now > this.confirmUntil) {
+      this.confirm = false
+      this.confirmUntil = 0
+      this.syncSave()
+    }
+    if (this.type === 1 && cents >= 50000 && !this.confirm) {
+      this.armConfirm()
+      return
+    }
+    if (this.confirm) {
+      this.confirm = false
+      this.confirmUntil = 0
+      if (this.confirmTimer) { clearTimeout(this.confirmTimer); this.confirmTimer = null }
+    }
+
+    this.saving = true
+    this.syncSave()
+
+    var that = this
+    var month = currentMonth()
+    var record = newRecord(this.type, this.selId, cents)
+    var bookmark = this.readBookmarkDraft()
+    if (bookmark) record.n = bookmark
+    addRecord(month, record, function (err) {
+      if (err) {
+        that.saving = false
+        that.syncSave()
+        prompt.showToast({ message: "保存失败，再点一次", duration: 1500 })
+        return
+      }
+      var savedAt = Date.now()
+      that.$app.$def.data.undo = {
+        id: record.i,
+        amount: record.a,
+        type: record.ty,
+        month: month,
+        ts: savedAt,
+        expireAt: savedAt + 6000,
+        record: record
+      }
+      that.saving = false
+      if (bookmark && that.$app && that.$app.$def && that.$app.$def.data) that.$app.$def.data.bookmarkDraft = ""
+      router.back()
+    })
+  },
+  openDetail() {
+    if (this.saving) return
+    router.push({ uri: "/pages/detail" })
+  },
+  back() {
+    router.back()
+  }
+}
+</script>
+
+<style>
+@import "../../common/base.css";
+
+.detail-hit {
+  margin-left: 12px;
+}
+
+.undo-hit {
+  margin-left: 12px;
+}
+
+.type-chip {
+  width: 84px;
+  height: 56px;
+  flex-shrink: 0;
+  margin-left: auto;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 12px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.type-label {
+  flex-shrink: 0;
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.amount-row {
+  position: relative;
+  width: 288px;
+  height: 56px;
+  flex-shrink: 0;
+  margin-left: 24px;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.amt-note {
+  position: absolute;
+  left: 0;
+  top: 16px;
+  width: 168px;
+  height: 32px;
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.amount-yen {
+  flex-shrink: 0;
+  margin-right: 4px;
+  font-size: 32px;
+  line-height: 44px;
+  font-weight: bold;
+}
+
+.amount-num {
+  flex-shrink: 0;
+  lines: 1;
+}
+
+.cat-scroll {
+  width: 288px;
+  height: 60px;
+  flex-shrink: 0;
+  margin-left: 24px;
+  margin-top: 4px;
+}
+
+.cat-track {
+  flex-direction: row;
+}
+
+.cat-card {
+  width: 80px;
+  height: 60px;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 12px;
+}
+
+.cat-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.cat-label {
+  flex-shrink: 0;
+  margin-top: 3px;
+  font-size: 26px;
+  line-height: 28px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.keyboard {
+  width: 288px;
+  height: 252px;
+  flex-shrink: 0;
+  margin-left: 24px;
+  margin-top: 4px;
+  flex-direction: row;
+}
+
+.key-grid {
+  width: 212px;
+  height: 252px;
+  flex-shrink: 0;
+  flex-direction: column;
+}
+
+.key-row {
+  width: 212px;
+  height: 60px;
+  flex-shrink: 0;
+  flex-direction: row;
+}
+
+.key-row-gap {
+  margin-top: 4px;
+}
+
+.key {
+  width: 68px;
+  height: 60px;
+  flex-shrink: 0;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.key-gap {
+  margin-left: 4px;
+}
+
+.key-label {
+  flex-shrink: 0;
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.key-right {
+  width: 72px;
+  height: 252px;
+  flex-shrink: 0;
+  margin-left: 4px;
+  flex-direction: column;
+}
+
+.bksp {
+  width: 72px;
+  height: 60px;
+  flex-shrink: 0;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.bksp-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.save {
+  width: 72px;
+  height: 188px;
+  flex-shrink: 0;
+  margin-top: 4px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.save-label {
+  flex-shrink: 0;
+  lines: 1;
+}
+</style>

@@ -1,0 +1,290 @@
+<template>
+  <div class="page" style="{{t.page}}">
+    <div class="topbar" style="{{t.page}}">
+      <div class="hit" onclick="back">
+        <image class="hit-icon" src="{{icons.back}}"></image>
+      </div>
+      <text class="top-title" style="{{t.text}}">月预算</text>
+    </div>
+
+    <div class="b-amt">
+      <text class="b-yen" style="{{t.muted}}">¥</text>
+      <text class="b-num" style="{{amountStyle}}">{{amountText}}</text>
+    </div>
+
+    <text class="b-hint" style="{{t.muted}}">{{hintText}}</text>
+
+    <div class="kbd">
+      <div class="kbd-left">
+        <div class="krow">
+          <div class="key" onclick="press('1')"><text class="key-label" style="{{t.text}}">1</text></div>
+          <div class="key key-gap" onclick="press('2')"><text class="key-label" style="{{t.text}}">2</text></div>
+          <div class="key key-gap" onclick="press('3')"><text class="key-label" style="{{t.text}}">3</text></div>
+        </div>
+        <div class="krow krow-gap">
+          <div class="key" onclick="press('4')"><text class="key-label" style="{{t.text}}">4</text></div>
+          <div class="key key-gap" onclick="press('5')"><text class="key-label" style="{{t.text}}">5</text></div>
+          <div class="key key-gap" onclick="press('6')"><text class="key-label" style="{{t.text}}">6</text></div>
+        </div>
+        <div class="krow krow-gap">
+          <div class="key" onclick="press('7')"><text class="key-label" style="{{t.text}}">7</text></div>
+          <div class="key key-gap" onclick="press('8')"><text class="key-label" style="{{t.text}}">8</text></div>
+          <div class="key key-gap" onclick="press('9')"><text class="key-label" style="{{t.text}}">9</text></div>
+        </div>
+        <div class="krow krow-gap">
+          <div class="key" onclick="press('00')"><text class="key-label" style="{{t.text}}">00</text></div>
+          <div class="key key-gap" onclick="press('0')"><text class="key-label" style="{{t.text}}">0</text></div>
+          <div class="key key-gap" onclick="press('.')"><text class="key-label" style="{{t.text}}">.</text></div>
+        </div>
+      </div>
+      <div class="kbd-right">
+        <div class="k-del" onclick="backspace">
+          <image class="k-del-icon" src="{{icons.backspace}}"></image>
+        </div>
+        <div class="k-save" onclick="save">
+          <text class="k-save-label" style="{{t.accent}}">存</text>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import { T, ICONS } from "../../common/theme.js"
+import { loadCfg, budgetOf, setBudget } from "../../common/data.js"
+import { currentMonth } from "../../common/date.js"
+import { formatAbs, parseInputToCents, centsToInput } from "../../common/money.js"
+
+var MAX_CENTS = 9999999
+var DEFAULT_HINT = "输入 0 表示不设预算"
+
+export default {
+  private: {
+    t: T,
+    icons: ICONS,
+    month: "",
+    input: "0",
+    amountText: "¥0",
+    amountStyle: { color: "#FFFFFF", fontSize: "48px", lineHeight: "56px", fontWeight: "bold" },
+    hintText: DEFAULT_HINT,
+    saving: false
+  },
+  onInit() {
+    this.month = currentMonth()
+    var that = this
+    loadCfg(function (cfg) {
+      var cents = budgetOf(cfg, that.month)
+      that.input = cents > 0 ? centsToInput(cents) : "0"
+      that.syncAmount()
+    })
+  },
+  syncAmount() {
+    var text = formatAbs(parseInputToCents(this.input))
+    this.amountText = text.slice(1)
+    var size = "48px"
+    var line = "56px"
+    if (text.length > 8) { size = "32px"; line = "40px" }
+    else if (text.length > 6) { size = "40px"; line = "48px" }
+    this.amountStyle = { color: "#FFFFFF", fontSize: size, lineHeight: line, fontWeight: "bold" }
+  },
+  press(key) {
+    var k = String(key)
+    var s = this.input || "0"
+    if (this.hintText !== DEFAULT_HINT) this.hintText = DEFAULT_HINT
+    var dot = s.indexOf(".")
+    if (k === ".") {
+      if (dot >= 0) return
+      this.input = (s === "" ? "0" : s) + "."
+      return
+    }
+    if (k === "00") {
+      if (dot >= 0) {
+        var frac0 = s.slice(dot + 1)
+        if (frac0.length === 0) this.input = s + "00"
+        else if (frac0.length === 1) this.input = s + "0"
+        else return
+        this.syncAmount()
+        return
+      }
+      if (s === "0") return
+      if (s.length + 2 > 5) return
+      this.input = s + "00"
+      this.syncAmount()
+      return
+    }
+    if (dot >= 0) {
+      var frac = s.slice(dot + 1)
+      if (frac.length >= 2) return
+      this.input = s + k
+      this.syncAmount()
+      return
+    }
+    if (s.length >= 5) return
+    if (s === "0") this.input = k
+    else this.input = s + k
+    this.syncAmount()
+  },
+  backspace() {
+    var s = this.input || ""
+    if (this.hintText !== DEFAULT_HINT) this.hintText = DEFAULT_HINT
+    s = s.slice(0, s.length - 1)
+    if (s === "") s = "0"
+    this.input = s
+    this.syncAmount()
+  },
+  save() {
+    if (this.saving) return
+    var cents = parseInputToCents(this.input)
+    if (cents > MAX_CENTS) cents = MAX_CENTS
+    if (cents < 0) cents = 0
+    this.saving = true
+    var that = this
+    var month = this.month || currentMonth()
+    setBudget(month, cents, function () {
+      loadCfg(function (cfg) {
+        var got = budgetOf(cfg, month)
+        that.saving = false
+        if (got === cents) {
+          router.back()
+        } else {
+          that.hintText = "保存失败，再点一次"
+        }
+      })
+    })
+  },
+  back() {
+    router.back()
+  }
+}
+</script>
+
+<style>
+@import "../../common/base.css";
+
+.b-amt {
+  width: 288px;
+  height: 56px;
+  margin-left: 24px;
+  flex-shrink: 0;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: flex-end;
+}
+
+.b-yen {
+  font-size: 32px;
+  line-height: 38px;
+  margin-right: 4px;
+  margin-bottom: 4px;
+  lines: 1;
+}
+
+.b-num {
+  font-weight: bold;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+
+.b-hint {
+  width: 288px;
+  height: 34px;
+  margin-left: 24px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  font-size: 26px;
+  line-height: 34px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.kbd {
+  width: 288px;
+  height: 280px;
+  margin-left: 24px;
+  margin-top: 4px;
+  flex-shrink: 0;
+  flex-direction: row;
+}
+
+.kbd-left {
+  width: 212px;
+  height: 280px;
+  flex-shrink: 0;
+  flex-direction: column;
+}
+
+.kbd-right {
+  width: 72px;
+  height: 280px;
+  margin-left: 4px;
+  flex-shrink: 0;
+  flex-direction: column;
+}
+
+.krow {
+  width: 212px;
+  height: 67px;
+  flex-shrink: 0;
+  flex-direction: row;
+}
+
+.krow-gap {
+  margin-top: 4px;
+}
+
+.key {
+  width: 68px;
+  height: 67px;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  border-radius: 12px;
+  background-color: #111111;
+}
+
+.key-gap {
+  margin-left: 4px;
+}
+
+.key-label {
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.k-del {
+  width: 72px;
+  height: 67px;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  border-radius: 12px;
+  background-color: #111111;
+}
+
+.k-del-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.k-save {
+  width: 72px;
+  height: 209px;
+  margin-top: 4px;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  border-radius: 12px;
+  background-color: #111111;
+}
+
+.k-save-label {
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: bold;
+  lines: 1;
+}
+</style>

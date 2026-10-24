@@ -1,0 +1,199 @@
+{
+  "lucideVersion": "0.545.0",
+  "icons": {
+    "utensils": {
+      "lucide": "utensils",
+      "size": 48,
+      "files": [
+        "w/utensils.png",
+        "s/utensils.png"
+      ]
+    },
+    "bus": {
+      "lucide": "bus",
+      "size": 48,
+      "files": [
+        "w/bus.png",
+        "s/bus.png"
+      ]
+    },
+    "shopping-bag": {
+      "lucide": "shopping-bag",
+      "size": 48,
+      "files": [
+        "w/shopping-bag.png",
+        "s/shopping-bag.png"
+      ]
+    },
+    "gamepad-2": {
+      "lucide": "gamepad-2",
+      "size": 48,
+      "files": [
+        "w/gamepad-2.png",
+        "s/gamepad-2.png"
+      ]
+    },
+    "shopping-basket": {
+      "lucide": "shopping-basket",
+      "size": 48,
+      "files": [
+        "w/shopping-basket.png",
+        "s/shopping-basket.png"
+      ]
+    },
+    "pill": {
+      "lucide": "pill",
+      "size": 48,
+      "files": [
+        "w/pill.png",
+        "s/pill.png"
+      ]
+    },
+    "book-open": {
+      "lucide": "book-open",
+      "size": 48,
+      "files": [
+        "w/book-open.png",
+        "s/book-open.png"
+      ]
+    },
+    "circle-ellipsis": {
+      "lucide": "circle-ellipsis",
+      "size": 48,
+      "files": [
+        "w/circle-ellipsis.png",
+        "s/circle-ellipsis.png"
+      ]
+    },
+    "wallet": {
+      "lucide": "wallet",
+      "size": 48,
+      "files": [
+        "w/wallet.png",
+        "s/wallet.png"
+      ]
+    },
+    "gift": {
+      "lucide": "gift",
+      "size": 48,
+      "files": [
+        "w/gift.png",
+        "s/gift.png"
+      ]
+    },
+    "plus": {
+      "lucide": "plus",
+      "size": 64,
+      "files": [
+        "a/plus.png"
+      ]
+    },
+    "chevron-left": {
+      "lucide": "chevron-left",
+      "size": 64,
+      "files": [
+        "w/chevron-left.png",
+        "s/chevron-left.png"
+      ]
+    },
+    "chevron-right": {
+      "lucide": "chevron-right",
+      "size": 64,
+      "files": [
+        "w/chevron-right.png",
+        "s/chevron-right.png"
+      ]
+    },
+    "list": {
+      "lucide": "list",
+      "size": 64,
+      "files": [
+        "s/list.png"
+      ]
+    },
+    "bar-chart-3": {
+      "lucide": "bar-chart-3",
+      "size": 64,
+      "files": [
+        "s/bar-chart-3.png"
+      ]
+    },
+    "settings": {
+      "lucide": "settings",
+      "size": 64,
+      "files": [
+        "s/settings.png"
+      ]
+    },
+    "trash-2": {
+      "lucide": "trash-2",
+      "size": 64,
+      "files": [
+        "s/trash-2.png"
+      ]
+    },
+    "check": {
+      "lucide": "check",
+      "size": 64,
+      "files": [
+        "w/check.png",
+        "s/check.png"
+      ]
+    },
+    "x": {
+      "lucide": "x",
+      "size": 64,
+      "files": [
+        "w/x.png",
+        "s/x.png"
+      ]
+    },
+    "rotate-ccw": {
+      "lucide": "rotate-ccw",
+      "size": 64,
+      "files": [
+        "w/rotate-ccw.png",
+        "s/rotate-ccw.png"
+      ]
+    },
+    "delete": {
+      "lucide": "delete",
+      "size": 64,
+      "files": [
+        "s/delete.png"
+      ]
+    },
+    "arrow-up": {
+      "lucide": "arrow-up",
+      "size": 64,
+      "files": [
+        "s/arrow-up.png",
+        "d/arrow-up.png"
+      ]
+    },
+    "arrow-down": {
+      "lucide": "arrow-down",
+      "size": 64,
+      "files": [
+        "s/arrow-down.png",
+        "d/arrow-down.png"
+      ]
+    },
+    "bookmark-plus": {
+      "lucide": "bookmark-plus",
+      "size": 64,
+      "files": [
+        "s/bookmark-plus.png",
+        "a/bookmark-plus.png"
+      ]
+    },
+    "bookmark-check": {
+      "lucide": "bookmark-check",
+      "size": 64,
+      "files": [
+        "s/bookmark-check.png",
+        "a/bookmark-check.png"
+      ]
+    }
+  }
+}

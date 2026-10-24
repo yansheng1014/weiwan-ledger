@@ -1,0 +1,18 @@
+{
+  "name": "bluebridge-ledger",
+  "version": "1.0.0",
+  "private": true,
+  "description": "维万记账 · 小米手环 Vela 快应用（纯本地）",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "bash scripts/build-rpk.sh",
+    "build:direct": "node scripts/build.cjs",
+    "icons": "node scripts/gen-icons.cjs"
+  },
+  "devDependencies": {
+    "@aiot-toolkit/jsc": "^1.0.10",
+    "aiot-toolkit": "^2.0.5",
+    "lucide-static": "^0.545.0",
+    "sharp": "^0.34.0"
+  }
+}

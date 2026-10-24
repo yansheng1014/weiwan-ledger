@@ -1,0 +1,64 @@
+{
+  "package": "com.bluebridge.ledger",
+  "name": "维万记账",
+  "versionName": "1.0.0",
+  "versionCode": 1,
+  "minAPILevel": 3,
+  "icon": "/common/app-icon.png",
+  "deviceTypeList": [
+    "watch"
+  ],
+  "features": [
+    {
+      "name": "system.router"
+    },
+    {
+      "name": "system.storage"
+    },
+    {
+      "name": "system.prompt"
+    },
+    {
+      "name": "system.vibrator"
+    },
+    {
+      "name": "system.device"
+    }
+  ],
+  "config": {
+    "logLevel": "error",
+    "designWidth": 336
+  },
+  "display": {
+    "backgroundColor": "#000000"
+  },
+  "router": {
+    "entry": "pages/home",
+    "pages": {
+      "pages/home": {
+        "component": "home"
+      },
+      "pages/record": {
+        "component": "record"
+      },
+      "pages/detail": {
+        "component": "detail"
+      },
+      "pages/report": {
+        "component": "report"
+      },
+      "pages/settings": {
+        "component": "settings"
+      },
+      "pages/categories": {
+        "component": "categories"
+      },
+      "pages/budget": {
+        "component": "budget"
+      },
+      "pages/bookmark": {
+        "component": "bookmark"
+      }
+    }
+  }
+}

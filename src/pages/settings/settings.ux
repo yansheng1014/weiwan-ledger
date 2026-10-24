@@ -1,0 +1,208 @@
+<template>
+  <div class="page" style="{{t.page}}">
+    <div class="topbar" style="{{t.page}}">
+      <div class="hit" onclick="back">
+        <image class="hit-icon" src="{{icons.back}}"></image>
+      </div>
+      <text class="top-title" style="{{t.text}}">设置</text>
+    </div>
+
+    <div class="set-rows">
+      <div class="set-row" onclick="goBudget">
+        <div class="hairline"></div>
+        <div class="set-body">
+          <text class="set-name" style="{{t.text}}">月预算</text>
+          <text class="set-meta" style="{{t.accent}}" if="{{hasBudget}}">{{budgetText}}</text>
+          <text class="set-meta-plain" style="{{t.muted}}" if="{{!hasBudget}}">未设</text>
+        </div>
+      </div>
+
+      <div class="set-row" onclick="goCategories">
+        <div class="hairline"></div>
+        <div class="set-body">
+          <text class="set-name" style="{{t.text}}">分类管理</text>
+          <text class="set-meta-plain" style="{{t.muted}}">{{catText}}</text>
+        </div>
+      </div>
+
+      <div class="set-row" if="{{!clearConfirm}}" onclick="askClear">
+        <div class="hairline"></div>
+        <div class="set-body">
+          <text class="set-name" style="{{danger}}">数据清除</text>
+          <text class="set-meta-plain" style="{{t.muted}}" if="{{clearMsg !== ''}}">{{clearMsg}}</text>
+        </div>
+      </div>
+
+      <div class="set-row" if="{{clearConfirm}}">
+        <div class="hairline"></div>
+        <div class="set-body">
+          <text class="set-confirm" style="{{danger}}">清除数据？</text>
+          <div class="set-hit" onclick="cancelClear">
+            <image class="set-hit-icon" src="{{icons.close}}"></image>
+          </div>
+          <div class="set-hit set-hit-ok" onclick="doClear">
+            <image class="set-hit-icon" src="{{icons.checkMuted}}"></image>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import { T, ICONS } from "../../common/theme.js"
+import { CATEGORIES, loadCfg, budgetOf, clearAllData } from "../../common/data.js"
+import { currentMonth } from "../../common/date.js"
+import { format } from "../../common/money.js"
+
+export default {
+  private: {
+    t: T,
+    icons: ICONS,
+    hasBudget: false,
+    budgetText: "",
+    catText: "",
+    clearConfirm: false,
+    clearMsg: "",
+    danger: { color: "#FF5A5F" }
+  },
+  onInit() {
+    this.catText = CATEGORIES.length + " 个"
+  },
+  onShow() {
+    this.clearConfirm = false
+    this.clearMsg = ""
+    this.load()
+  },
+  load() {
+    var that = this
+    loadCfg(function (cfg) {
+      var cents = budgetOf(cfg, currentMonth())
+      if (cents > 0) {
+        that.hasBudget = true
+        that.budgetText = format(cents)
+      } else {
+        that.hasBudget = false
+        that.budgetText = ""
+      }
+    })
+  },
+  back() {
+    router.back()
+  },
+  goBudget() {
+    router.push({ uri: "/pages/budget" })
+  },
+  goCategories() {
+    router.push({ uri: "/pages/categories" })
+  },
+  askClear() {
+    this.clearConfirm = true
+  },
+  cancelClear() {
+    this.clearConfirm = false
+  },
+  doClear() {
+    var that = this
+    clearAllData(function (err) {
+      that.clearConfirm = false
+      that.clearMsg = err ? "清除失败" : "已清除"
+      that.load()
+    })
+  },
+  onBackPress() {
+    if (this.clearConfirm) {
+      this.clearConfirm = false
+      return true
+    }
+    return false
+  }
+}
+</script>
+
+<style>
+@import "../../common/base.css";
+
+.set-rows {
+  width: 288px;
+  margin-left: 24px;
+  margin-top: 16px;
+  flex-shrink: 0;
+  flex-direction: column;
+}
+
+.set-row {
+  width: 288px;
+  flex-shrink: 0;
+  flex-direction: column;
+}
+
+.set-body {
+  width: 288px;
+  height: 87px;
+  flex-direction: row;
+  align-items: center;
+}
+
+.set-name {
+  flex: 1;
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.set-meta {
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.set-meta-plain {
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.set-confirm {
+  width: 164px;
+  flex-shrink: 0;
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.set-hit {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+}
+
+.set-hit-ok {
+  margin-left: 12px;
+}
+
+.set-hit-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.set-license {
+  width: 288px;
+  margin-left: 24px;
+  margin-top: 32px;
+  height: 34px;
+  font-size: 26px;
+  line-height: 34px;
+  font-weight: bold;
+  lines: 1;
+}
+</style>

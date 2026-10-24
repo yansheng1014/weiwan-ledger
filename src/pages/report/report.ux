@@ -1,0 +1,323 @@
+<template>
+  <div class="page" style="{{t.page}}">
+    <div class="topbar" style="{{t.page}}">
+      <div class="hit" onclick="back">
+        <image class="hit-icon" src="{{icons.back}}"></image>
+      </div>
+      <text class="top-title" style="{{t.text}}">月结</text>
+    </div>
+
+    <div class="r-step">
+      <div class="stepper">
+        <div class="hit" onclick="prevTap">
+          <image class="hit-icon" style="{{prevStyle}}" src="{{prevIcon}}"></image>
+        </div>
+        <text class="step-label" style="{{t.text}}">{{monthLabel}}</text>
+        <div class="hit" onclick="nextTap">
+          <image class="hit-icon" style="{{nextStyle}}" src="{{nextIcon}}"></image>
+        </div>
+      </div>
+    </div>
+
+    <div class="r-hero">
+      <text class="hero-yen" style="{{t.secondary}}">{{yenText}}</text>
+      <text class="hero-num" style="{{heroStyle}}">{{expenseText}}</text>
+    </div>
+
+    <div class="r-sum">
+      <text class="sum-line" style="{{incomeStyle}}">{{incomeText}}</text>
+      <text class="sum-line" style="{{balanceStyle}}">{{balanceText}}</text>
+    </div>
+
+    <div class="r-line" style="{{t.line}}"></div>
+
+    <div class="r-rank">
+      <div class="rk" for="{{rankRows}}" tid="k">
+        <text class="rk-name" style="{{t.text}}">{{$item.name}}</text>
+        <text class="rk-pct" style="{{t.secondary}}">{{$item.pctText}}</text>
+        <text class="rk-amt" style="{{$item.amtStyle}}">{{$item.amtText}}</text>
+      </div>
+    </div>
+
+    <div class="r-stat">
+      <text class="stat-left" style="{{t.secondary}}">{{avgText}}</text>
+      <text class="stat-right" style="{{t.secondary}}">{{countText}}</text>
+    </div>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import { T, ICONS, COLORS } from "../../common/theme.js"
+import { loadMonth, summarize, ranking } from "../../common/data.js"
+import { currentMonth, prevMonth, nextMonth, monthTitle, monthsAgo } from "../../common/date.js"
+import { format } from "../../common/money.js"
+
+export default {
+  private: {
+    t: T,
+    icons: ICONS,
+    prevIcon: ICONS.chevronLeft,
+    nextIcon: ICONS.chevronRight,
+    prevStyle: { opacity: "0.4" },
+    nextStyle: { opacity: "0.55" },
+    month: "",
+    monthLabel: "—",
+    yenText: "",
+    expenseText: "—",
+    incomeText: "收入 —",
+    balanceText: "—",
+    avgText: "日均 —",
+    countText: "—",
+    heroStyle: { color: COLORS.text, fontSize: "72px", lineHeight: "80px", fontWeight: "bold" },
+    incomeStyle: { color: COLORS.secondary, fontSize: "26px", lineHeight: "34px", fontWeight: "bold" },
+    balanceStyle: { color: COLORS.accent, fontSize: "26px", lineHeight: "34px", fontWeight: "bold" },
+    rankRows: [],
+    loading: true,
+    canPrev: false,
+    canNext: false
+  },
+  onInit() {
+    this.month = currentMonth()
+  },
+  onShow() {
+    this.refresh()
+  },
+  refresh() {
+    this.applyBounds()
+    this.reload()
+  },
+  applyBounds() {
+    this.canPrev = this.month > monthsAgo(23)
+    this.canNext = this.month < currentMonth()
+    this.prevStyle = { opacity: this.canPrev ? "1" : "0.4" }
+    this.nextStyle = { opacity: this.canNext ? "1" : "0.55" }
+  },
+  reload() {
+    var that = this
+    this.loading = true
+    this.monthLabel = "—"
+    this.yenText = ""
+    this.expenseText = "—"
+    this.incomeText = "收入 —"
+    this.balanceText = "—"
+    this.avgText = "日均 —"
+    this.countText = "—"
+    this.rankRows = []
+    loadMonth(this.month, function (records) {
+      that.render(records)
+    })
+  },
+  heroStyleOf(text) {
+    if (text.length <= 6) {
+      return { color: COLORS.text, fontSize: "72px", lineHeight: "80px", fontWeight: "bold" }
+    }
+    if (text.length <= 8) {
+      return { color: COLORS.text, fontSize: "56px", lineHeight: "64px", fontWeight: "bold" }
+    }
+    return { color: COLORS.text, fontSize: "44px", lineHeight: "52px", fontWeight: "bold" }
+  },
+  render(records) {
+    var summary = summarize(records, this.month)
+    var rows = ranking(summary)
+    var list = []
+    for (var i = 0; i < rows.length; i += 1) {
+      var amtText = format(rows[i].amount)
+      var amtSize = amtText.length > 10 ? "20px" : (amtText.length > 7 ? "24px" : "28px")
+      var amtLine = amtText.length > 10 ? "28px" : (amtText.length > 7 ? "32px" : "34px")
+      list.push({
+        k: "r" + i,
+        name: rows[i].name,
+        pctText: rows[i].percent + "%",
+        amtText: amtText,
+        amtStyle: { color: COLORS.text, fontSize: amtSize, lineHeight: amtLine, fontWeight: "bold" }
+      })
+    }
+    var expText = format(summary.expense).replace("¥", "")
+    this.heroStyle = this.heroStyleOf(expText)
+    this.yenText = "¥"
+    this.expenseText = expText
+    this.incomeText = "收入 " + format(summary.income)
+    this.balanceText = "结余 " + format(summary.balance, { plus: true })
+    var maxLen = Math.max(this.incomeText.length, this.balanceText.length)
+    var sumSize = maxLen > 12 ? "20px" : (maxLen > 9 ? "22px" : "26px")
+    var sumLine = "32px"
+    this.incomeStyle = { color: COLORS.secondary, fontSize: sumSize, lineHeight: sumLine, fontWeight: "bold" }
+    this.balanceStyle = { color: COLORS.accent, fontSize: sumSize, lineHeight: sumLine, fontWeight: "bold" }
+    this.avgText = "日均 " + format(summary.dailyAvg)
+    this.countText = summary.count > 0 ? "共 " + summary.count + " 笔" : "本月没有记录"
+    this.rankRows = list
+    this.monthLabel = monthTitle(this.month)
+    this.loading = false
+  },
+  shiftMonth(delta) {
+    if (this.loading) return
+    if (delta < 0 && !this.canPrev) return
+    if (delta > 0 && !this.canNext) return
+    this.month = delta < 0 ? prevMonth(this.month) : nextMonth(this.month)
+    this.applyBounds()
+    this.reload()
+  },
+  prevTap() {
+    this.shiftMonth(-1)
+  },
+  nextTap() {
+    this.shiftMonth(1)
+  },
+  back() {
+    router.back()
+  }
+}
+</script>
+
+<style>
+@import "../../common/base.css";
+
+.r-step {
+  width: 288px;
+  height: 56px;
+  flex-shrink: 0;
+  margin-left: 24px;
+  margin-top: 8px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.stepper {
+  width: 208px;
+  height: 56px;
+  flex-shrink: 0;
+  flex-direction: row;
+  align-items: center;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #3A3A3A;
+  border-radius: 12px;
+}
+
+.step-label {
+  flex: 1;
+  text-align: center;
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.r-hero {
+  width: 288px;
+  height: 80px;
+  flex-shrink: 0;
+  margin-left: 24px;
+  margin-top: 4px;
+  flex-direction: row;
+  align-items: flex-end;
+}
+
+.hero-yen {
+  flex-shrink: 0;
+  margin-right: 4px;
+  margin-bottom: 8px;
+  font-size: 32px;
+  line-height: 38px;
+}
+
+.hero-num {
+  flex-shrink: 0;
+}
+
+.r-sum {
+  width: 288px;
+  height: 64px;
+  flex-shrink: 0;
+  margin-left: 24px;
+  margin-top: 2px;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.sum-line {
+  width: 288px;
+  height: 32px;
+  flex-shrink: 0;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+
+.r-line {
+  width: 288px;
+  height: 1px;
+  flex-shrink: 0;
+  margin-left: 24px;
+  margin-top: 2px;
+}
+
+.r-rank {
+  width: 288px;
+  height: 136px;
+  flex-shrink: 0;
+  margin-left: 24px;
+  margin-top: 3px;
+  flex-direction: column;
+}
+
+.rk {
+  width: 288px;
+  height: 34px;
+  flex-shrink: 0;
+  flex-direction: row;
+  align-items: center;
+}
+
+.rk-name {
+  flex: 1;
+  font-size: 28px;
+  line-height: 34px;
+  lines: 1;
+}
+
+.rk-pct {
+  width: 76px;
+  flex-shrink: 0;
+  font-size: 26px;
+  line-height: 34px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.rk-amt {
+  width: 112px;
+  flex-shrink: 0;
+  text-align: right;
+  font-weight: bold;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+
+.r-stat {
+  width: 288px;
+  height: 34px;
+  flex-shrink: 0;
+  margin-left: 24px;
+  flex-direction: row;
+  align-items: center;
+}
+
+.stat-left {
+  flex: 1;
+  font-size: 26px;
+  line-height: 36px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.stat-right {
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 26px;
+  line-height: 36px;
+  font-weight: bold;
+  lines: 1;
+}
+</style>

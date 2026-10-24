@@ -1,0 +1,172 @@
+<template>
+  <div class="page" style="{{t.page}}">
+    <div class="topbar" style="{{t.page}}">
+      <div class="hit" onclick="back">
+        <image class="hit-icon" src="{{icons.back}}"></image>
+      </div>
+      <text class="top-title" style="{{t.text}}">书签</text>
+    </div>
+
+    <div class="bk-card" style="{{t.surface}}">
+      <text class="bk-note" style="{{noteStyle}}">{{displayText}}</text>
+      <input
+        id="noteInput"
+        class="bk-input-cover"
+        type="text"
+        value="{{inputValue}}"
+        maxlength="30"
+        enterkeytype="done"
+        onchange="onInput"
+        onenterkeyclick="onEnter"
+      />
+      <div class="hit bk-check" onclick="confirm">
+        <image class="hit-icon" src="{{icons.check}}"></image>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import { T, ICONS, COLORS } from "../../common/theme.js"
+import { loadMonth, saveMonth } from "../../common/data.js"
+import { currentMonth } from "../../common/date.js"
+
+export default {
+  protected: {
+    month: "",
+    id: ""
+  },
+  private: {
+    t: T,
+    icons: ICONS,
+    noteText: "",
+    inputValue: "",
+    lastRaw: "",
+    lastAt: 0,
+    displayText: "暂无书签",
+    noteStyle: { color: COLORS.muted, fontSize: "26px", lineHeight: "32px", fontWeight: "bold" }
+  },
+  onInit() {
+    if (!this.month) this.month = currentMonth()
+    this.loadNote()
+  },
+  loadNote() {
+    var that = this
+    if (!this.id) {
+      var draft = ""
+      var a = this.$app
+      if (a && a.$def && a.$def.data) draft = a.$def.data.bookmarkDraft || ""
+      that.applyNote(draft)
+      return
+    }
+    loadMonth(this.month, function (records) {
+      var list = records || []
+      var note = ""
+      for (var i = 0; i < list.length; i += 1) {
+        if (list[i].i === that.id) { note = list[i].n || ""; break }
+      }
+      that.applyNote(note)
+    })
+  },
+  applyNote(note) {
+    this.noteText = note || ""
+    this.inputValue = note || ""
+    this.displayText = this.noteText ? this.noteText : "暂无书签"
+    this.noteStyle = this.noteText
+      ? { color: COLORS.text, fontSize: "26px", lineHeight: "32px", fontWeight: "bold" }
+      : { color: COLORS.muted, fontSize: "26px", lineHeight: "32px", fontWeight: "bold" }
+  },
+  onInput(event) {
+    var raw = event && event.value ? String(event.value) : ""
+    if (!raw) return
+    var now = Date.now()
+    // VVD 的系统键盘每次按键会重复派发同一次 change，做短窗去重
+    if (raw === this.lastRaw && now - this.lastAt < 140) return
+    this.lastRaw = raw
+    this.lastAt = now
+    var text = this.noteText || ""
+    if (raw.length === 1) {
+      text = text + raw
+    } else if (raw.length > text.length && raw.indexOf(text) === 0) {
+      text = raw
+    } else {
+      text = raw
+    }
+    if (text.length > 30) text = text.slice(0, 30)
+    this.noteText = text
+    this.inputValue = text
+    this.displayText = text ? text : "暂无书签"
+    this.noteStyle = text
+      ? { color: COLORS.text, fontSize: "26px", lineHeight: "32px", fontWeight: "bold" }
+      : { color: COLORS.muted, fontSize: "26px", lineHeight: "32px", fontWeight: "bold" }
+  },
+  onEnter() {
+    try { this.$element("noteInput").focus({ focus: false }) } catch (e) {}
+    this.confirm()
+  },
+  confirm() {
+    var that = this
+    var note = String(this.noteText || "").replace(/^\s+|\s+$/g, "")
+    if (!this.id) {
+      if (this.$app && this.$app.$def && this.$app.$def.data) this.$app.$def.data.bookmarkDraft = note
+      router.back()
+      return
+    }
+    loadMonth(this.month, function (records) {
+      var list = records || []
+      for (var i = 0; i < list.length; i += 1) {
+        if (list[i].i !== that.id) continue
+        if (note) list[i].n = note
+        else delete list[i].n
+        saveMonth(that.month, list, function () { router.back() })
+        return
+      }
+      router.back()
+    })
+  },
+  back() {
+    router.back()
+  }
+}
+</script>
+
+<style>
+@import "../../common/base.css";
+
+.bk-card {
+  position: relative;
+  width: 288px;
+  height: 128px;
+  flex-shrink: 0;
+  margin-left: 24px;
+  margin-top: 12px;
+  border-radius: 16px;
+  padding: 14px;
+  flex-direction: column;
+}
+
+.bk-note {
+  width: 208px;
+  flex-shrink: 0;
+  lines: 3;
+  text-overflow: ellipsis;
+}
+
+.bk-check {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+.bk-input-cover {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 288px;
+  height: 128px;
+  padding: 0;
+  color: transparent;
+  background-color: transparent;
+}
+</style>

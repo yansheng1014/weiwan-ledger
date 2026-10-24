@@ -1,0 +1,17 @@
+node_modules/
+build/
+.temp_*
+*.log
+
+# 构建产物：保留可安装 rpk，忽略中间文件
+dist/*
+!dist/*.rpk
+
+# 本地模拟器/调试脚本与截图（不属于应用源码）
+scripts/dismiss-modal.py
+scripts/emu.cjs
+scripts/run-emu*.cjs
+scripts/shot.cjs
+scripts/start-emu.cjs
+screenshots/
+/tmp/

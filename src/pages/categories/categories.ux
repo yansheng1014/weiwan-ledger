@@ -1,0 +1,230 @@
+<template>
+  <div class="page" style="{{t.page}}">
+    <div class="topbar" style="{{t.page}}">
+      <div class="hit" onclick="back">
+        <image class="hit-icon" src="{{icons.back}}"></image>
+      </div>
+      <text class="top-title" style="{{t.text}}">分类</text>
+    </div>
+
+    <scroll class="cat-scroll" scroll-y="true" scroll-x="false">
+      <div class="cat-top"></div>
+      <text class="cat-sec" style="{{t.muted}}">支出</text>
+
+      <div class="cat-item" for="{{expRows}}" tid="id">
+        <div class="hairline"></div>
+        <div class="cat-body">
+          <text class="cat-name" style="{{$item.nameStyle}}">{{$item.name}}</text>
+          <div class="cat-hit" onclick="moveUp($item.id)">
+            <image class="cat-arrow" src="{{$item.upIcon}}"></image>
+          </div>
+          <div class="cat-hit cat-hit-down" onclick="moveDown($item.id)">
+            <image class="cat-arrow" src="{{$item.downIcon}}"></image>
+          </div>
+        </div>
+      </div>
+
+      <text class="cat-sec" style="{{t.muted}}">收入</text>
+
+      <div class="cat-item" for="{{incRows}}" tid="id">
+        <div class="hairline"></div>
+        <div class="cat-body">
+          <text class="cat-name" style="{{$item.nameStyle}}">{{$item.name}}</text>
+          <div class="cat-hit" onclick="moveUp($item.id)">
+            <image class="cat-arrow" src="{{$item.upIcon}}"></image>
+          </div>
+          <div class="cat-hit cat-hit-down" onclick="moveDown($item.id)">
+            <image class="cat-arrow" src="{{$item.downIcon}}"></image>
+          </div>
+        </div>
+      </div>
+
+      <div class="cat-pad"></div>
+    </scroll>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import { T, ICONS } from "../../common/theme.js"
+import { loadCfg, saveCfg, orderedCats, frequency } from "../../common/data.js"
+import { currentMonth } from "../../common/date.js"
+
+function idsOf(list) {
+  var out = []
+  for (var i = 0; i < list.length; i += 1) out.push(list[i].id)
+  return out
+}
+
+function decorate(list, errId) {
+  var rows = []
+  for (var i = 0; i < list.length; i += 1) {
+    var cat = list[i]
+    var failed = !!errId && errId === cat.id
+    rows.push({
+      id: cat.id,
+      name: failed ? "保存失败" : cat.name,
+      nameStyle: failed ? T.muted : T.text,
+      upIcon: i === 0 ? ICONS.upDisabled : ICONS.up,
+      downIcon: i === list.length - 1 ? ICONS.downDisabled : ICONS.down
+    })
+  }
+  return rows
+}
+
+export default {
+  private: {
+    t: T,
+    icons: ICONS,
+    cfg: null,
+    counts: {},
+    expRows: [],
+    incRows: [],
+    expOrder: [],
+    incOrder: [],
+    errId: "",
+    errTimer: null
+  },
+  onShow() {
+    this.load()
+  },
+  load() {
+    var that = this
+    loadCfg(function (cfg) {
+      that.cfg = cfg
+      frequency(currentMonth(), function (counts) {
+        that.counts = counts || {}
+        that.rebuild()
+      })
+    })
+  },
+  rebuild() {
+    if (!this.cfg) return
+    var exp = orderedCats(1, this.cfg, this.counts)
+    var inc = orderedCats(2, this.cfg, this.counts)
+    this.expOrder = idsOf(exp)
+    this.incOrder = idsOf(inc)
+    this.expRows = decorate(exp, this.errId)
+    this.incRows = decorate(inc, this.errId)
+  },
+  moveUp(id) {
+    this.move(id, -1)
+  },
+  moveDown(id) {
+    this.move(id, 1)
+  },
+  move(id, dir) {
+    if (!this.cfg) return
+    var isExp = this.expOrder.indexOf(id) >= 0
+    var list = (isExp ? this.expOrder : this.incOrder).slice()
+    var idx = list.indexOf(id)
+    if (idx < 0) return
+    var target = idx + dir
+    if (target < 0 || target >= list.length) return
+    var tmp = list[idx]
+    list[idx] = list[target]
+    list[target] = tmp
+
+    var prevManual = this.cfg.manualOrder
+    this.cfg.manualOrder = {
+      exp: isExp ? list : this.expOrder.slice(),
+      inc: isExp ? this.incOrder.slice() : list
+    }
+    var that = this
+    this.rebuild()
+    saveCfg(this.cfg, function (err) {
+      if (!err) return
+      that.cfg.manualOrder = prevManual
+      that.errId = id
+      that.rebuild()
+      if (that.errTimer) clearTimeout(that.errTimer)
+      that.errTimer = setTimeout(function () {
+        that.errTimer = null
+        that.errId = ""
+        that.rebuild()
+      }, 2000)
+    })
+  },
+  back() {
+    router.back()
+  },
+  onDestroy() {
+    if (this.errTimer) clearTimeout(this.errTimer)
+  }
+}
+</script>
+
+<style>
+@import "../../common/base.css";
+
+.cat-scroll {
+  width: 336px;
+  height: 376px;
+  flex-shrink: 0;
+  flex-direction: column;
+}
+
+.cat-top {
+  width: 336px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.cat-sec {
+  width: 288px;
+  margin-left: 24px;
+  height: 32px;
+  flex-shrink: 0;
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.cat-item {
+  width: 288px;
+  margin-left: 24px;
+  flex-shrink: 0;
+  flex-direction: column;
+}
+
+.cat-body {
+  width: 288px;
+  height: 87px;
+  flex-direction: row;
+  align-items: center;
+}
+
+.cat-name {
+  width: 164px;
+  flex-shrink: 0;
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.cat-hit {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+}
+
+.cat-hit-down {
+  margin-left: 12px;
+}
+
+.cat-arrow {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.cat-pad {
+  width: 336px;
+  height: 24px;
+  flex-shrink: 0;
+}
+</style>

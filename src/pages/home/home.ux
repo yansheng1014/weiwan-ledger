@@ -1,0 +1,555 @@
+<template>
+  <div class="page home-page" style="{{t.page}}">
+    <div class="home-content">
+      <text class="hero-label" style="{{t.secondary}}">本月支出</text>
+
+      <div class="hero">
+        <text class="hero-yen" style="{{t.muted}}">¥</text>
+        <text class="hero-num" style="{{heroNumStyle}}">{{heroNum}}</text>
+      </div>
+
+      <div class="sub-row" onclick="subTap">
+        <text class="sub-text" style="{{subRightStyle}}">{{subRight}}</text>
+      </div>
+
+      <div class="cta" style="{{ctaStyle}}" onclick="goRecord">
+        <image class="cta-icon" src="{{icons.plusAccent}}"></image>
+        <text class="cta-label" style="{{t.text}}">记一笔</text>
+      </div>
+
+      <div class="nav-row nav-row-first" onclick="goDetail">
+        <image class="nav-icon" src="{{icons.list}}"></image>
+        <text class="nav-label" style="{{t.text}}">明细</text>
+        <text class="nav-meta" style="{{t.secondary}}">{{countLabel}}</text>
+      </div>
+
+      <div class="nav-row" onclick="goReport">
+        <image class="nav-icon" src="{{icons.report}}"></image>
+        <text class="nav-label" style="{{t.text}}">月结</text>
+      </div>
+
+      <div class="slot-row" if="{{showSettings}}" onclick="openSettings">
+        <image class="slot-icon" src="{{icons.settings}}"></image>
+        <text class="slot-label" style="{{t.text}}">设置</text>
+      </div>
+
+      <div class="slot-row slot-undo" if="{{showUndo}}">
+        <text class="undo-text" style="{{t.secondary}}">{{undoText}}</text>
+        <div class="undo-hit" onclick="undoTap">
+          <image class="undo-icon" src="{{icons.undoMuted}}"></image>
+          <text class="undo-label" style="{{t.text}}">撤销</text>
+        </div>
+      </div>
+
+      <div class="slot-row" if="{{showUndone}}">
+        <image class="undo-icon" src="{{icons.undoMuted}}"></image>
+        <text class="undone-text" style="{{t.secondary}}">已撤销</text>
+      </div>
+
+    </div>
+
+    <div class="hair hair-1" style="{{t.line}}"></div>
+    <div class="hair hair-2" style="{{t.line}}"></div>
+    <div class="hair hair-3" style="{{t.line}}"></div>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import { T, ICONS, COLORS } from "../../common/theme.js"
+import { loadCfg, loadMonth, summarize, budgetOf, undoLast } from "../../common/data.js"
+import { formatAbs } from "../../common/money.js"
+import { currentMonth } from "../../common/date.js"
+
+var HERO_STYLE = { color: COLORS.text, fontSize: "96px", lineHeight: "104px", fontWeight: "bold", flexShrink: 0 }
+
+export default {
+  private: {
+    t: T,
+    icons: ICONS,
+    month: "",
+    loading: true,
+    hasLoaded: false,
+    degraded: false,
+    heroNum: "—",
+    heroNumStyle: HERO_STYLE,
+    subLeft: "本月支出",
+    subRight: "预算剩 —",
+    subRightStyle: { color: COLORS.secondary, fontSize: "26px", lineHeight: "34px", fontWeight: "bold" },
+    countLabel: "—",
+    showUndo: false,
+    showUndone: false,
+    showSettings: true,
+    undoText: "已记 ¥0",
+    undoneUntil: 0,
+    loadToken: 0,
+    watchTimer: null,
+    undoTimer: null,
+    undoneTimer: null,
+    ctaStyle: {
+      borderColor: COLORS.line,
+      backgroundColor: COLORS.bg
+    }
+  },
+  readUndo() {
+    var a = this.$app
+    if (a && a.$def && a.$def.data) return a.$def.data.undo
+    return null
+  },
+  clearUndoState() {
+    if (this.$app && this.$app.$def && this.$app.$def.data) this.$app.$def.data.undo = null
+  },
+  onShow() {
+    this.syncSlotMonth()
+    this.refresh()
+  },
+  onHide() {
+    this.clearTimers()
+  },
+  onDestroy() {
+    this.clearTimers()
+  },
+  clearTimers() {
+    if (this.watchTimer) { clearTimeout(this.watchTimer); this.watchTimer = null }
+    if (this.undoTimer) { clearTimeout(this.undoTimer); this.undoTimer = null }
+    if (this.undoneTimer) { clearTimeout(this.undoneTimer); this.undoneTimer = null }
+  },
+  syncSlotMonth() {
+    if (!this.month) this.month = currentMonth()
+  },
+  refresh() {
+    var that = this
+    var month = currentMonth()
+    this.month = month
+    this.loadToken += 1
+    var token = this.loadToken
+
+    this.loading = true
+    this.degraded = false
+    if (!this.hasLoaded) {
+      this.countLabel = "—"
+      this.subLeft = "本月支出"
+      this.subRight = "预算剩 —"
+      this.heroNum = "—"
+      this.heroNumStyle = HERO_STYLE
+    }
+    this.refreshSlot()
+
+    var cfgData = null
+    var recordsData = null
+    var loadErr = null
+    var pending = 2
+    function done() {
+      pending -= 1
+      if (pending > 0) return
+      that.applyData(token, month, cfgData, recordsData, loadErr)
+    }
+    loadCfg(function (cfg, err) { cfgData = cfg; if (err) loadErr = err; done() })
+    loadMonth(month, function (records, err) { recordsData = records; if (err) loadErr = err; done() })
+  },
+  applyData(token, month, cfg, records, loadErr) {
+    if (token !== this.loadToken) return
+    this.loading = false
+    this.degraded = !!loadErr
+    this.hasLoaded = true
+
+    var summary = summarize(records || [], month)
+    this.countLabel = summary.count + " 笔"
+    this.setHero(summary.expense)
+
+    if (summary.count === 0) this.subLeft = "本月还没有记录"
+    else this.subLeft = "本月支出"
+
+    var budget = budgetOf(cfg, month)
+    if (this.degraded) {
+      this.subLeft = "本月支出"
+      this.subRight = "存储异常·重试"
+      this.subRightStyle = { color: COLORS.secondary, fontSize: "24px", lineHeight: "32px", fontWeight: "bold" }
+    } else if (budget <= 0) {
+      this.subRight = "未设预算"
+      this.subRightStyle = { color: COLORS.secondary, fontSize: "26px", lineHeight: "32px", fontWeight: "bold" }
+    } else {
+      // 预算按净支出计：收入可抵扣当月支出
+      var remaining = budget - summary.netSpend
+      var over = remaining < 0
+      var amountText = formatAbs(Math.abs(remaining))
+      var shortText = (over ? "超 " : "剩 ") + amountText
+      var fullText = (over ? "预算超 " : "预算剩 ") + amountText
+      var right = summary.count === 0 ? shortText : fullText
+      if (right.length > 12) right = shortText
+      this.subRight = right
+      this.subRightStyle = {
+        color: COLORS.secondary,
+        fontSize: right.length > 11 ? "22px" : "26px",
+        lineHeight: "32px",
+        fontWeight: "bold"
+      }
+    }
+    this.refreshSlot()
+  },
+  setHero(cents) {
+    var full = formatAbs(cents)
+    var len = full.length
+    var size = "88px"
+    var height = "96px"
+    if (len === 7) { size = "72px"; height = "80px" }
+    else if (len > 7) { size = "48px"; height = "56px" }
+    this.heroNum = full.slice(1)
+    this.heroNumStyle = {
+      color: COLORS.text,
+      fontSize: size,
+      lineHeight: height,
+      fontWeight: "bold",
+      flexShrink: 0
+    }
+  },
+  refreshSlot() {
+    var that = this
+    if (this.undoTimer) { clearTimeout(this.undoTimer); this.undoTimer = null }
+    if (this.undoneTimer) { clearTimeout(this.undoneTimer); this.undoneTimer = null }
+    var now = Date.now()
+
+    if (this.degraded) {
+      this.showUndo = false
+      this.showUndone = false
+      this.showSettings = true
+      return
+    }
+
+    if (this.undoneUntil && now < this.undoneUntil) {
+      this.showUndo = false
+      this.showUndone = true
+      this.showSettings = false
+      this.undoneTimer = setTimeout(function () {
+        that.undoneUntil = 0
+        that.undoneTimer = null
+        that.refreshSlot()
+      }, this.undoneUntil - now)
+      return
+    }
+
+    var undo = this.readUndo()
+    if (undo) {
+      var expireAt = undo.expireAt || ((undo.ts || 0) + 6000)
+      if (undo.month === this.month && expireAt > now) {
+        var amount = typeof undo.amount === "number" ? undo.amount : 0
+        this.undoText = "已记 " + formatAbs(amount)
+        this.showUndo = true
+        this.showUndone = false
+        this.showSettings = false
+        this.undoTimer = setTimeout(function () {
+          that.undoTimer = null
+          that.refreshSlot()
+        }, expireAt - now)
+        return
+      }
+    }
+
+    this.showUndo = false
+    this.showUndone = false
+    this.showSettings = true
+  },
+  undoTap() {
+    var that = this
+    var undo = this.readUndo()
+    if (!undo) { this.refreshSlot(); return }
+    if (!undo.id) { this.runUndo(undo); return }
+    loadMonth(undo.month, function (records) {
+      var list = records || []
+      if (!list.length || list[0].i !== undo.id) {
+        that.clearUndoState()
+        that.refreshSlot()
+        return
+      }
+      that.runUndo(undo)
+    })
+  },
+  runUndo(undo) {
+    var that = this
+    undoLast(undo.month, function (err) {
+      if (err) {
+        that.degraded = true
+        that.subLeft = "本月支出"
+        that.subRight = "存储异常·重试"
+        that.subRightStyle = { color: COLORS.secondary, fontSize: "24px", lineHeight: "32px", fontWeight: "bold" }
+        that.refreshSlot()
+        return
+      }
+      that.clearUndoState()
+      that.undoneUntil = Date.now() + 2000
+      that.refresh()
+    })
+  },
+  retryLoad() {
+    this.degraded = false
+    this.refresh()
+  },
+  subTap() {
+    if (this.degraded) this.retryLoad()
+  },
+  goRecord() {
+    router.push({ uri: "/pages/record" })
+  },
+  goDetail() {
+    router.push({ uri: "/pages/detail" })
+  },
+  goReport() {
+    router.push({ uri: "/pages/report" })
+  },
+  openSettings() {
+    router.push({ uri: "/pages/settings" })
+  }
+}
+</script>
+
+<style>
+@import "../../common/base.css";
+
+.home-page {
+  position: relative;
+}
+
+.home-content {
+  width: 288px;
+  flex-shrink: 0;
+  margin-left: 24px;
+  margin-right: 24px;
+  padding-top: 24px;
+  flex-direction: column;
+}
+
+.hero-label {
+  width: 288px;
+  height: 28px;
+  flex-shrink: 0;
+  font-size: 26px;
+  line-height: 28px;
+  font-weight: bold;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+
+.hero {
+  width: 288px;
+  height: 96px;
+  flex-shrink: 0;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.hero-yen {
+  flex-shrink: 0;
+  margin-top: 6px;
+  margin-right: 4px;
+  font-size: 36px;
+  line-height: 44px;
+  font-weight: bold;
+}
+
+.hero-num {
+  flex-shrink: 0;
+  lines: 1;
+}
+
+.sub-row {
+  width: 288px;
+  height: 32px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  flex-direction: row;
+  align-items: center;
+}
+
+.sub-text {
+  flex-shrink: 1;
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: bold;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+
+.cta {
+  width: 288px;
+  height: 88px;
+  flex-shrink: 0;
+  margin-top: 6px;
+  padding-left: 23px;
+  flex-direction: row;
+  align-items: center;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 16px;
+}
+
+.cta-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  margin-right: 12px;
+  object-fit: contain;
+}
+
+.cta-label {
+  flex-shrink: 0;
+  font-size: 36px;
+  line-height: 44px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.nav-row {
+  width: 288px;
+  height: 64px;
+  flex-shrink: 0;
+  flex-direction: row;
+  align-items: center;
+}
+
+.nav-row-first {
+  margin-top: 2px;
+}
+
+.nav-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  margin-right: 12px;
+  object-fit: contain;
+}
+
+.nav-label {
+  flex: 1;
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.nav-meta {
+  flex-shrink: 0;
+  font-size: 26px;
+  line-height: 34px;
+  font-weight: bold;
+  text-align: right;
+  lines: 1;
+}
+
+.slot-row {
+  width: 288px;
+  height: 64px;
+  flex-shrink: 0;
+  flex-direction: row;
+  align-items: center;
+}
+
+.slot-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  margin-right: 12px;
+  object-fit: contain;
+}
+
+.slot-label {
+  flex-shrink: 0;
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.slot-undo {
+  justify-content: space-between;
+}
+
+.undo-text {
+  flex-shrink: 0;
+  font-size: 26px;
+  line-height: 34px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.undo-hit {
+  width: 96px;
+  height: 64px;
+  flex-shrink: 0;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.undo-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  margin-right: 8px;
+  object-fit: contain;
+}
+
+.undo-label {
+  flex-shrink: 0;
+  font-size: 26px;
+  line-height: 34px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.undone-text {
+  font-size: 26px;
+  line-height: 34px;
+  font-weight: bold;
+  lines: 1;
+}
+
+.slot-degraded {
+  flex-direction: row;
+  align-items: center;
+}
+
+.degraded-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  margin-right: 12px;
+  object-fit: contain;
+}
+
+.degraded-copy {
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.degraded-title {
+  font-size: 24px;
+  line-height: 32px;
+  lines: 1;
+}
+
+.degraded-sub {
+  font-size: 24px;
+  line-height: 32px;
+  lines: 1;
+}
+
+.hair {
+  position: absolute;
+  left: 24px;
+  width: 288px;
+  height: 1px;
+  flex-shrink: 0;
+}
+
+.hair-1 {
+  top: 278px;
+}
+
+.hair-2 {
+  top: 342px;
+}
+
+.hair-3 {
+  top: 406px;
+}
+</style>
